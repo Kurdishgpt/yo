@@ -7,6 +7,7 @@ import fs from "fs";
 import { promisify } from "util";
 import OpenAI from "openai";
 import ffmpeg from "fluent-ffmpeg";
+import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
 
 const writeFile = promisify(fs.writeFile);
 const mkdir = promisify(fs.mkdir);
@@ -18,6 +19,10 @@ const upload = multer({
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
+});
+
+const elevenlabs = new ElevenLabsClient({
+  apiKey: process.env.ELEVENLABS_API_KEY,
 });
 
 async function extractAudio(inputPath: string, outputPath: string): Promise<void> {
@@ -103,13 +108,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })) || []
       );
 
-      const ttsResponse = await openai.audio.speech.create({
-        model: "tts-1",
-        voice: "alloy",
-        input: translatedText,
+      const audioStream = await elevenlabs.textToSpeech.convert("JBFqnCBsd6RMkjVDRZzb", {
+        text: translatedText,
+        modelId: "eleven_multilingual_v2",
       });
 
-      const audioBuffer = Buffer.from(await ttsResponse.arrayBuffer());
+      const reader = audioStream.getReader();
+      const chunks: Uint8Array[] = [];
+      
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+      }
+      
+      const audioBuffer = Buffer.concat(chunks.map(chunk => Buffer.from(chunk)));
+      
       const outputAudioPath = path.join("outputs", `kurdish-${Date.now()}.mp3`);
       await writeFile(outputAudioPath, audioBuffer);
 
