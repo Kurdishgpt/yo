@@ -34,23 +34,27 @@ def transcribe_and_translate(audio_path, output_audio_path):
         translator = GoogleTranslator(source='auto', target='ckb')
         kurdish_text = translator.translate(original_text)
         
-        # Generate Kurdish audio using gTTS with Arabic (ar) as fallback
-        # gTTS doesn't support Kurdish directly, so we use Arabic which is widely understood
-        try:
-            # Try with Arabic first since gTTS has better support for it
-            tts = gTTS(text=kurdish_text, lang='ar', slow=False)
-            tts.save(output_audio_path)
-        except Exception as tts_error:
-            print(f"TTS Warning: {str(tts_error)}", file=sys.stderr)
-            # If Arabic fails, try with English as ultimate fallback
-            tts = gTTS(text=kurdish_text, lang='en', slow=False)
-            tts.save(output_audio_path)
+        # Translate segments to Kurdish Central for subtitles
+        translated_segments = []
+        for seg in segments:
+            translated_seg_text = translator.translate(seg["text"])
+            translated_segments.append({
+                "start": seg["start"],
+                "end": seg["end"],
+                "text": translated_seg_text
+            })
+        
+        # Keep the original audio - no TTS generation
+        # Just copy the original audio to the output path
+        import shutil
+        shutil.copy2(audio_path, output_audio_path)
         
         # Return the result as JSON
         output = {
             "text": original_text,
             "segments": segments,
             "translated": kurdish_text,
+            "translated_segments": translated_segments,
             "audio_path": output_audio_path
         }
         

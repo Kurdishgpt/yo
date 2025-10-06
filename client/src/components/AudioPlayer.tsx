@@ -86,7 +86,7 @@ export function AudioPlayer({ audioUrl, onDownload }: AudioPlayerProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">Kurdish Dubbed Audio</CardTitle>
+        <CardTitle className="text-lg">Original Audio with Kurdish Translation</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <audio ref={audioRef} src={audioUrl} preload="metadata" />

@@ -27,8 +27,8 @@ export default function HomePage() {
   const [steps, setSteps] = useState<ProcessingStep[]>([
     { id: "1", label: "Extracting Audio", status: "pending" },
     { id: "2", label: "Transcribing", status: "pending" },
-    { id: "3", label: "Translating to Kurdish", status: "pending" },
-    { id: "4", label: "Generating Kurdish Audio", status: "pending" },
+    { id: "3", label: "Translating to Kurdish Central", status: "pending" },
+    { id: "4", label: "Preparing Audio", status: "pending" },
   ]);
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState<ResultData | null>(null);
