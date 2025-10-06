@@ -4,8 +4,12 @@ version = "0.1.0"
 description = "Add your description here"
 requires-python = ">=3.11"
 dependencies = [
+    "googletrans==4.0.0rc1",
+    "gtts>=2.5.4",
     "openai-whisper>=20250625",
+    "speechrecognition>=3.14.3",
     "torch>=2.8.0",
+    "whisper>=1.1.10",
 ]
 
 [[tool.uv.index]]
