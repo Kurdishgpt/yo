@@ -2,33 +2,37 @@
 import sys
 import json
 import os
-import whisper
+from openai import OpenAI
 from deep_translator import GoogleTranslator
-from gtts import gTTS
 
 def transcribe_and_translate(audio_path, output_audio_path):
     try:
-        # Load the Whisper model (base model for faster processing)
-        model = whisper.load_model("base")
+        # Initialize OpenAI client
+        client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
         
-        # Transcribe the audio
-        result = model.transcribe(audio_path, verbose=False)
+        # Transcribe the audio using OpenAI's Whisper API
+        with open(audio_path, "rb") as audio_file:
+            transcript = client.audio.transcriptions.create(
+                model="whisper-1",
+                file=audio_file,
+                response_format="verbose_json"
+            )
         
         # Detect the source language
-        detected_language = result.get("language", "en")
+        detected_language = transcript.language if hasattr(transcript, 'language') else "en"
         print(f"Detected language: {detected_language.title()}", file=sys.stderr)
         
         # Format the segments for SRT generation
         segments = []
-        if "segments" in result:
-            for seg in result["segments"]:
+        if hasattr(transcript, 'segments') and transcript.segments:
+            for seg in transcript.segments:
                 segments.append({
-                    "start": seg["start"],
-                    "end": seg["end"],
-                    "text": seg["text"].strip()
+                    "start": seg.start,
+                    "end": seg.end,
+                    "text": seg.text.strip()
                 })
         
-        original_text = result["text"]
+        original_text = transcript.text
         
         # Translate to Kurdish Central (Sorani) using deep-translator
         translator = GoogleTranslator(source='auto', target='ckb')
