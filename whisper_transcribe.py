@@ -3,16 +3,23 @@ import sys
 import json
 import os
 import whisper
-from googletrans import Translator
-from gtts import gTTS
+from openai import OpenAI
+from pathlib import Path
 
 def transcribe_and_translate(audio_path, output_audio_path):
     try:
+        # Initialize OpenAI client
+        client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+        
         # Load the Whisper model (base model for faster processing)
         model = whisper.load_model("base")
         
         # Transcribe the audio
         result = model.transcribe(audio_path, verbose=False)
+        
+        # Detect the source language
+        detected_language = result.get("language", "en")
+        print(f"Detected language: {detected_language.title()}", file=sys.stderr)
         
         # Format the segments for SRT generation
         segments = []
@@ -26,14 +33,33 @@ def transcribe_and_translate(audio_path, output_audio_path):
         
         original_text = result["text"]
         
-        # Translate to Kurdish
-        translator = Translator()
-        translated = translator.translate(original_text, src='en', dest='ku')
-        kurdish_text = translated.text
+        # Translate to Kurdish using OpenAI
+        # the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
+        translation_response = client.chat.completions.create(
+            model="gpt-5",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are a professional translator. Translate the given text to Kurdish (Sorani/Central Kurdish). Only provide the translated text, nothing else."
+                },
+                {
+                    "role": "user",
+                    "content": original_text
+                }
+            ]
+        )
         
-        # Generate Kurdish audio using gTTS
-        tts = gTTS(text=kurdish_text, lang='ku', slow=False)
-        tts.save(output_audio_path)
+        kurdish_text = translation_response.choices[0].message.content.strip()
+        
+        # Generate Kurdish audio using OpenAI TTS
+        speech_response = client.audio.speech.create(
+            model="tts-1",
+            voice="alloy",
+            input=kurdish_text
+        )
+        
+        # Save the audio file
+        speech_response.stream_to_file(output_audio_path)
         
         # Return the result as JSON
         output = {
