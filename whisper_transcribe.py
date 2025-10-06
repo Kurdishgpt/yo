@@ -12,8 +12,8 @@ def transcribe_and_translate(audio_path, output_audio_path):
         # Load the Whisper model (base model for faster processing)
         model = whisper.load_model("base")
         
-        # Transcribe the audio
-        result = model.transcribe(audio_path, verbose=False)
+        # Transcribe the audio with English language forced for better accuracy
+        result = model.transcribe(audio_path, language="en", verbose=False)
         
         # Detect the source language
         detected_language = result.get("language", "en")
