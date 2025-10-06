@@ -75,11 +75,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const uploadedFilePath = req.file.path;
       const audioPath = path.join("uploads", `audio-${Date.now()}.mp3`);
       const outputAudioPath = path.join("outputs", `kurdish-${Date.now()}.mp3`);
+      const timestamp = Date.now();
 
       const isVideo = req.file.mimetype.startsWith("video/");
+      
+      // Save the original media to outputs folder for viewing
+      let originalMediaPath = uploadedFilePath;
       if (isVideo) {
+        const videoOutputPath = path.join("outputs", `original-video-${timestamp}.mp4`);
+        fs.copyFileSync(uploadedFilePath, videoOutputPath);
+        originalMediaPath = videoOutputPath;
         await extractAudio(uploadedFilePath, audioPath);
       } else {
+        const audioOutputPath = path.join("outputs", `original-audio-${timestamp}.mp3`);
+        fs.copyFileSync(uploadedFilePath, audioOutputPath);
+        originalMediaPath = audioOutputPath;
         fs.copyFileSync(uploadedFilePath, audioPath);
       }
 
@@ -93,8 +103,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }))
       );
 
+      // Clean up temporary files
       fs.unlinkSync(uploadedFilePath);
-      if (isVideo || uploadedFilePath !== audioPath) {
+      if (fs.existsSync(audioPath) && audioPath !== originalMediaPath) {
         fs.unlinkSync(audioPath);
       }
 
@@ -103,6 +114,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         translated: result.translated,
         srt: srtContent,
         tts: `/${outputAudioPath.replace(/\\/g, "/")}`,
+        originalMedia: `/${originalMediaPath.replace(/\\/g, "/")}`,
+        isVideo: isVideo,
       });
     } catch (error: any) {
       console.error("Upload processing error:", error);

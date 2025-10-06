@@ -3,6 +3,7 @@ import { FileUpload } from "@/components/FileUpload";
 import { ProcessingStatus } from "@/components/ProcessingStatus";
 import { ResultCard } from "@/components/ResultCard";
 import { AudioPlayer } from "@/components/AudioPlayer";
+import { VideoPlayer } from "@/components/VideoPlayer";
 import { Button } from "@/components/ui/button";
 import { FileText, Languages, AudioWaveform } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -19,6 +20,8 @@ type ResultData = {
   translated: string;
   srt: string;
   tts: string;
+  originalMedia?: string;
+  isVideo?: boolean;
 };
 
 export default function HomePage() {
@@ -175,6 +178,10 @@ export default function HomePage() {
 
           {result && !isProcessing && (
             <div className="space-y-8">
+              {result.originalMedia && (
+                <VideoPlayer videoUrl={result.originalMedia} />
+              )}
+              
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <ResultCard
                   title="Original Transcription"
