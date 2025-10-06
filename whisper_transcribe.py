@@ -3,14 +3,11 @@ import sys
 import json
 import os
 import whisper
-from openai import OpenAI
-from pathlib import Path
+from deep_translator import GoogleTranslator
+from gtts import gTTS
 
 def transcribe_and_translate(audio_path, output_audio_path):
     try:
-        # Initialize OpenAI client
-        client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
-        
         # Load the Whisper model (base model for faster processing)
         model = whisper.load_model("base")
         
@@ -33,33 +30,21 @@ def transcribe_and_translate(audio_path, output_audio_path):
         
         original_text = result["text"]
         
-        # Translate to Kurdish using OpenAI
-        # the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
-        translation_response = client.chat.completions.create(
-            model="gpt-5",
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You are a professional translator. Translate the given text to Kurdish (Sorani/Central Kurdish). Only provide the translated text, nothing else."
-                },
-                {
-                    "role": "user",
-                    "content": original_text
-                }
-            ]
-        )
+        # Translate to Kurdish using deep-translator
+        translator = GoogleTranslator(source='auto', target='ku')
+        kurdish_text = translator.translate(original_text)
         
-        kurdish_text = translation_response.choices[0].message.content.strip()
-        
-        # Generate Kurdish audio using OpenAI TTS
-        speech_response = client.audio.speech.create(
-            model="tts-1",
-            voice="alloy",
-            input=kurdish_text
-        )
-        
-        # Save the audio file
-        speech_response.stream_to_file(output_audio_path)
+        # Generate Kurdish audio using gTTS with Arabic (ar) as fallback
+        # gTTS doesn't support Kurdish directly, so we use Arabic which is widely understood
+        try:
+            # Try with Arabic first since gTTS has better support for it
+            tts = gTTS(text=kurdish_text, lang='ar', slow=False)
+            tts.save(output_audio_path)
+        except Exception as tts_error:
+            print(f"TTS Warning: {str(tts_error)}", file=sys.stderr)
+            # If Arabic fails, try with English as ultimate fallback
+            tts = gTTS(text=kurdish_text, lang='en', slow=False)
+            tts.save(output_audio_path)
         
         # Return the result as JSON
         output = {
