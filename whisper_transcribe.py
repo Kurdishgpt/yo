@@ -30,8 +30,8 @@ def transcribe_and_translate(audio_path, output_audio_path):
         
         original_text = result["text"]
         
-        # Translate to Kurdish using deep-translator
-        translator = GoogleTranslator(source='auto', target='ku')
+        # Translate to Kurdish Central (Sorani) using deep-translator
+        translator = GoogleTranslator(source='auto', target='ckb')
         kurdish_text = translator.translate(original_text)
         
         # Generate Kurdish audio using gTTS with Arabic (ar) as fallback
