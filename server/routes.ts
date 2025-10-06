@@ -5,24 +5,16 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { promisify } from "util";
-import OpenAI from "openai";
+import { exec } from "child_process";
 import ffmpeg from "fluent-ffmpeg";
-import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
 
 const writeFile = promisify(fs.writeFile);
 const mkdir = promisify(fs.mkdir);
+const execPromise = promisify(exec);
 
 const upload = multer({
   dest: "uploads/",
   limits: { fileSize: 100 * 1024 * 1024 }, // 100MB limit
-});
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
-const elevenlabs = new ElevenLabsClient({
-  apiKey: process.env.ELEVENLABS_API_KEY,
 });
 
 async function extractAudio(inputPath: string, outputPath: string): Promise<void> {
@@ -33,6 +25,16 @@ async function extractAudio(inputPath: string, outputPath: string): Promise<void
       .on("error", (err) => reject(err))
       .save(outputPath);
   });
+}
+
+async function transcribeWithWhisper(audioPath: string): Promise<{ text: string; segments: any[] }> {
+  try {
+    const { stdout } = await execPromise(`python whisper_transcribe.py "${audioPath}"`);
+    return JSON.parse(stdout);
+  } catch (error: any) {
+    console.error("Whisper transcription error:", error);
+    throw new Error("Failed to transcribe audio");
+  }
 }
 
 function generateSRT(segments: any[]): string {
@@ -75,57 +77,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         fs.copyFileSync(uploadedFilePath, audioPath);
       }
 
-      const transcription = await openai.audio.transcriptions.create({
-        file: fs.createReadStream(audioPath),
-        model: "whisper-1",
-        response_format: "verbose_json",
-        timestamp_granularities: ["segment"],
-      });
-
-      const originalText = transcription.text;
-
-      const translationResponse = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: [
-          {
-            role: "system",
-            content: "You are a professional translator. Translate the following English text to Kurdish (Sorani). Provide only the translation without any additional text.",
-          },
-          {
-            role: "user",
-            content: originalText,
-          },
-        ],
-      });
-
-      const translatedText = translationResponse.choices[0].message.content || "";
+      const transcription = await transcribeWithWhisper(audioPath);
 
       const srtContent = generateSRT(
-        (transcription as any).segments?.map((seg: any) => ({
+        transcription.segments.map((seg: any) => ({
           start: seg.start,
           end: seg.end,
           text: seg.text,
-        })) || []
+        }))
       );
-
-      const audioStream = await elevenlabs.textToSpeech.convert("JBFqnCBsd6RMkjVDRZzb", {
-        text: translatedText,
-        modelId: "eleven_multilingual_v2",
-      });
-
-      const reader = audioStream.getReader();
-      const chunks: Uint8Array[] = [];
-      
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        chunks.push(value);
-      }
-      
-      const audioBuffer = Buffer.concat(chunks.map(chunk => Buffer.from(chunk)));
-      
-      const outputAudioPath = path.join("outputs", `kurdish-${Date.now()}.mp3`);
-      await writeFile(outputAudioPath, audioBuffer);
 
       fs.unlinkSync(uploadedFilePath);
       if (isVideo || uploadedFilePath !== audioPath) {
@@ -133,10 +93,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       res.json({
-        transcription: originalText,
-        translated: translatedText,
+        transcription: transcription.text,
         srt: srtContent,
-        tts: `/${outputAudioPath.replace(/\\/g, "/")}`,
       });
     } catch (error: any) {
       console.error("Upload processing error:", error);
