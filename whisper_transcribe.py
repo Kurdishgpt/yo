@@ -17,33 +17,43 @@ def transcribe_and_translate(audio_path, output_audio_path):
         
         # Detect the source language
         detected_language = result.get("language", "en")
-        print(f"Detected language: {detected_language.title()}", file=sys.stderr)
+        if isinstance(detected_language, str):
+            print(f"Detected language: {detected_language.title()}", file=sys.stderr)
+        else:
+            print(f"Detected language: {detected_language}", file=sys.stderr)
         
         # Format the segments for SRT generation
         segments = []
-        if "segments" in result:
+        if "segments" in result and isinstance(result["segments"], list):
             for seg in result["segments"]:
-                segments.append({
-                    "start": seg["start"],
-                    "end": seg["end"],
-                    "text": seg["text"].strip()
-                })
+                if isinstance(seg, dict):
+                    segments.append({
+                        "start": seg.get("start", 0),
+                        "end": seg.get("end", 0),
+                        "text": seg.get("text", "").strip()
+                    })
         
-        original_text = result["text"]
+        original_text = result.get("text", "")
+        if not isinstance(original_text, str):
+            original_text = str(original_text)
         
         # Translate to Kurdish Central (Sorani) using deep-translator
         translator = GoogleTranslator(source='auto', target='ckb')
         kurdish_text = translator.translate(original_text)
         
+        print(f"Original text: {original_text[:100]}...", file=sys.stderr)
+        print(f"Kurdish translation: {kurdish_text[:100]}...", file=sys.stderr)
+        
         # Translate segments to Kurdish Central for subtitles
         translated_segments = []
         for seg in segments:
-            translated_seg_text = translator.translate(seg["text"])
-            translated_segments.append({
-                "start": seg["start"],
-                "end": seg["end"],
-                "text": translated_seg_text
-            })
+            if seg.get("text"):
+                translated_seg_text = translator.translate(seg["text"])
+                translated_segments.append({
+                    "start": seg["start"],
+                    "end": seg["end"],
+                    "text": translated_seg_text
+                })
         
         # Generate Kurdish TTS audio using the Kurdish TTS API
         api_key = os.environ.get("KURDISH_TTS_API_KEY")
@@ -60,7 +70,12 @@ def transcribe_and_translate(audio_path, output_audio_path):
             "Content-Type": "application/json"
         }
         
+        print(f"Calling Kurdish TTS API for {len(kurdish_text)} characters...", file=sys.stderr)
         r = requests.post(url, headers=headers, data=json.dumps(tts_data))
+        
+        print(f"Kurdish TTS API response: {r.status_code}", file=sys.stderr)
+        if r.status_code != 200:
+            print(f"TTS API error response: {r.text[:500]}", file=sys.stderr)
         
         if r.status_code == 200:
             # Save as temporary WAV file

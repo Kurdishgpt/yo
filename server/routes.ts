@@ -31,6 +31,11 @@ async function transcribeWithWhisper(audioPath: string, outputAudioPath: string)
   try {
     const { stdout, stderr } = await execPromise(`python whisper_transcribe.py "${audioPath}" "${outputAudioPath}"`);
     
+    // Log stderr to see TTS API errors and other diagnostic info
+    if (stderr) {
+      console.log("Whisper stderr:", stderr);
+    }
+    
     // The JSON output should be on the last line of stdout
     const lines = stdout.trim().split('\n');
     const jsonLine = lines[lines.length - 1];
