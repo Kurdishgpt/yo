@@ -4,6 +4,8 @@ import json
 import os
 from openai import OpenAI
 from deep_translator import GoogleTranslator
+import requests
+from pydub import AudioSegment
 
 def transcribe_and_translate(audio_path, output_audio_path):
     try:
@@ -48,10 +50,42 @@ def transcribe_and_translate(audio_path, output_audio_path):
                 "text": translated_seg_text
             })
         
-        # Keep the original audio - no TTS generation
-        # Just copy the original audio to the output path
-        import shutil
-        shutil.copy2(audio_path, output_audio_path)
+        # Generate Kurdish TTS audio using the Kurdish TTS API
+        api_key = os.environ.get("KURDISH_TTS_API_KEY")
+        url = "https://www.kurdishtts.com/api/tts-proxy"
+        
+        tts_data = {
+            "text": kurdish_text,
+            "language": "sorani",
+            "speaker_key": "1_speaker"
+        }
+        
+        headers = {
+            "x-api-key": api_key,
+            "Content-Type": "application/json"
+        }
+        
+        r = requests.post(url, headers=headers, data=json.dumps(tts_data))
+        
+        if r.status_code == 200:
+            # Save as temporary WAV file
+            temp_wav_path = output_audio_path.replace('.mp3', '.wav')
+            with open(temp_wav_path, "wb") as f:
+                f.write(r.content)
+            
+            # Convert WAV to MP3
+            sound = AudioSegment.from_wav(temp_wav_path)
+            sound.export(output_audio_path, format="mp3")
+            
+            # Clean up temporary WAV file
+            if os.path.exists(temp_wav_path):
+                os.remove(temp_wav_path)
+            
+            print(f"✅ Kurdish audio generated successfully", file=sys.stderr)
+        else:
+            print(f"⚠️ TTS API error: {r.status_code} - Copying original audio instead", file=sys.stderr)
+            import shutil
+            shutil.copy2(audio_path, output_audio_path)
         
         # Return the result as JSON
         output = {
