@@ -27,9 +27,9 @@ async function extractAudio(inputPath: string, outputPath: string): Promise<void
   });
 }
 
-async function transcribeWithWhisper(audioPath: string): Promise<{ text: string; segments: any[] }> {
+async function transcribeWithWhisper(audioPath: string, outputAudioPath: string): Promise<{ text: string; segments: any[]; translated: string; audio_path: string }> {
   try {
-    const { stdout } = await execPromise(`python whisper_transcribe.py "${audioPath}"`);
+    const { stdout } = await execPromise(`python whisper_transcribe.py "${audioPath}" "${outputAudioPath}"`);
     return JSON.parse(stdout);
   } catch (error: any) {
     console.error("Whisper transcription error:", error);
@@ -69,6 +69,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const uploadedFilePath = req.file.path;
       const audioPath = path.join("uploads", `audio-${Date.now()}.mp3`);
+      const outputAudioPath = path.join("outputs", `kurdish-${Date.now()}.mp3`);
 
       const isVideo = req.file.mimetype.startsWith("video/");
       if (isVideo) {
@@ -77,10 +78,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         fs.copyFileSync(uploadedFilePath, audioPath);
       }
 
-      const transcription = await transcribeWithWhisper(audioPath);
+      const result = await transcribeWithWhisper(audioPath, outputAudioPath);
 
       const srtContent = generateSRT(
-        transcription.segments.map((seg: any) => ({
+        result.segments.map((seg: any) => ({
           start: seg.start,
           end: seg.end,
           text: seg.text,
@@ -93,8 +94,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       res.json({
-        transcription: transcription.text,
+        transcription: result.text,
+        translated: result.translated,
         srt: srtContent,
+        tts: `/${outputAudioPath.replace(/\\/g, "/")}`,
       });
     } catch (error: any) {
       console.error("Upload processing error:", error);
