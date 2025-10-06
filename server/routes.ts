@@ -29,8 +29,13 @@ async function extractAudio(inputPath: string, outputPath: string): Promise<void
 
 async function transcribeWithWhisper(audioPath: string, outputAudioPath: string): Promise<{ text: string; segments: any[]; translated: string; audio_path: string }> {
   try {
-    const { stdout } = await execPromise(`python whisper_transcribe.py "${audioPath}" "${outputAudioPath}"`);
-    return JSON.parse(stdout);
+    const { stdout, stderr } = await execPromise(`python whisper_transcribe.py "${audioPath}" "${outputAudioPath}"`);
+    
+    // The JSON output should be on the last line of stdout
+    const lines = stdout.trim().split('\n');
+    const jsonLine = lines[lines.length - 1];
+    
+    return JSON.parse(jsonLine);
   } catch (error: any) {
     console.error("Whisper transcription error:", error);
     throw new Error("Failed to transcribe audio");
