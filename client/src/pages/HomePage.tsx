@@ -4,6 +4,7 @@ import { ProcessingStatus } from "@/components/ProcessingStatus";
 import { ResultCard } from "@/components/ResultCard";
 import { AudioPlayer } from "@/components/AudioPlayer";
 import { VideoPlayer } from "@/components/VideoPlayer";
+import { VoiceSelector } from "@/components/VoiceSelector";
 import { Button } from "@/components/ui/button";
 import { FileText, Languages, AudioWaveform } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -205,6 +206,8 @@ export default function HomePage() {
               </div>
 
               <AudioPlayer audioUrl={result.tts} onDownload={downloadAudio} />
+
+              <VoiceSelector translatedText={result.translated} />
 
               <div className="flex justify-center">
                 <Button
