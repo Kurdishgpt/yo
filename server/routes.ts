@@ -5,12 +5,11 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { promisify } from "util";
-import { exec } from "child_process";
+import { spawn } from "child_process";
 import ffmpeg from "fluent-ffmpeg";
 
 const writeFile = promisify(fs.writeFile);
 const mkdir = promisify(fs.mkdir);
-const execPromise = promisify(exec);
 
 const upload = multer({
   dest: "uploads/",
@@ -28,23 +27,49 @@ async function extractAudio(inputPath: string, outputPath: string): Promise<void
 }
 
 async function transcribeWithWhisper(audioPath: string, outputAudioPath: string, speaker: string = "1_speaker"): Promise<{ text: string; segments: any[]; translated: string; audio_path: string }> {
-  try {
-    const { stdout, stderr } = await execPromise(`python whisper_transcribe.py "${audioPath}" "${outputAudioPath}" "${speaker}"`);
-    
-    // Log stderr to see TTS API errors and other diagnostic info
-    if (stderr) {
-      console.log("Whisper stderr:", stderr);
-    }
-    
-    // The JSON output should be on the last line of stdout
-    const lines = stdout.trim().split('\n');
-    const jsonLine = lines[lines.length - 1];
-    
-    return JSON.parse(jsonLine);
-  } catch (error: any) {
-    console.error("Whisper transcription error:", error);
-    throw new Error("Failed to transcribe audio");
-  }
+  return new Promise((resolve, reject) => {
+    const pythonProcess = spawn('python3', ['whisper_transcribe.py', audioPath, outputAudioPath, speaker], {
+      env: process.env
+    });
+
+    let stdout = '';
+    let stderr = '';
+
+    pythonProcess.stdout.on('data', (data) => {
+      stdout += data.toString();
+    });
+
+    pythonProcess.stderr.on('data', (data) => {
+      stderr += data.toString();
+    });
+
+    pythonProcess.on('close', (code) => {
+      if (stderr) {
+        console.log("Whisper stderr:", stderr);
+      }
+
+      if (code !== 0) {
+        console.error("Whisper transcription error:", stderr);
+        reject(new Error("Failed to transcribe audio"));
+        return;
+      }
+
+      try {
+        // The JSON output should be on the last line of stdout
+        const lines = stdout.trim().split('\n');
+        const jsonLine = lines[lines.length - 1];
+        resolve(JSON.parse(jsonLine));
+      } catch (error: any) {
+        console.error("Failed to parse Whisper output:", error);
+        reject(new Error("Failed to parse transcription result"));
+      }
+    });
+
+    pythonProcess.on('error', (error) => {
+      console.error("Failed to start Python process:", error);
+      reject(new Error("Failed to start transcription"));
+    });
+  });
 }
 
 function generateSRT(segments: any[]): string {
