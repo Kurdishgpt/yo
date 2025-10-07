@@ -4,6 +4,7 @@ import { ProcessingStatus } from "@/components/ProcessingStatus";
 import { ResultCard } from "@/components/ResultCard";
 import { AudioPlayer } from "@/components/AudioPlayer";
 import { VideoPlayer } from "@/components/VideoPlayer";
+import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FileText, Languages, AudioWaveform, Mic2 } from "lucide-react";
@@ -153,17 +154,23 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <header className="border-b sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-50">
+        <div className="max-w-6xl mx-auto px-6 py-4">
+          <Logo />
+        </div>
+      </header>
+      
       <div className="py-16 md:py-24">
         <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-12">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">
+            <h2 className="text-4xl md:text-5xl font-bold mb-4">
               Kurdish Dubbing & Translation
-            </h1>
+            </h2>
             <p className="text-lg text-muted-foreground mb-2">
               Upload your video or audio, get Kurdish dubbing with synchronized subtitles
             </p>
             <p className="text-sm text-muted-foreground">
-              Powered by Whisper AI, Google Translate & gTTS
+              Powered by Whisper AI, Google Translate & Kurdish TTS
             </p>
           </div>
 
