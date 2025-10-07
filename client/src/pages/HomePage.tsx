@@ -4,9 +4,9 @@ import { ProcessingStatus } from "@/components/ProcessingStatus";
 import { ResultCard } from "@/components/ResultCard";
 import { AudioPlayer } from "@/components/AudioPlayer";
 import { VideoPlayer } from "@/components/VideoPlayer";
-import { VoiceSelector } from "@/components/VoiceSelector";
 import { Button } from "@/components/ui/button";
-import { FileText, Languages, AudioWaveform } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { FileText, Languages, AudioWaveform, Mic2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import axios from "axios";
 
@@ -27,6 +27,7 @@ type ResultData = {
 
 export default function HomePage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedVoice, setSelectedVoice] = useState("1_speaker");
   const [isProcessing, setIsProcessing] = useState(false);
   const [steps, setSteps] = useState<ProcessingStep[]>([
     { id: "1", label: "Extracting Audio", status: "pending" },
@@ -45,6 +46,7 @@ export default function HomePage() {
     
     const formData = new FormData();
     formData.append("media", file);
+    formData.append("speaker", selectedVoice);
 
     try {
       updateStep("1", "processing");
@@ -166,7 +168,24 @@ export default function HomePage() {
           </div>
 
           {!isProcessing && !result && (
-            <div className="max-w-4xl mx-auto">
+            <div className="max-w-4xl mx-auto space-y-6">
+              <div className="bg-card rounded-lg border p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <Mic2 className="w-5 h-5 text-primary" />
+                  <h3 className="text-lg font-semibold">Select Kurdish Voice</h3>
+                </div>
+                <Select value={selectedVoice} onValueChange={setSelectedVoice}>
+                  <SelectTrigger className="w-full md:w-64" data-testid="select-dubbing-voice">
+                    <SelectValue placeholder="Choose a voice" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1_speaker">Male 1</SelectItem>
+                    <SelectItem value="2_speaker">Male 2</SelectItem>
+                    <SelectItem value="3_speaker">Female 1</SelectItem>
+                    <SelectItem value="4_speaker">Female 2</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <FileUpload onFileSelect={handleFileSelect} />
             </div>
           )}
@@ -206,8 +225,6 @@ export default function HomePage() {
               </div>
 
               <AudioPlayer audioUrl={result.tts} onDownload={downloadAudio} />
-
-              <VoiceSelector translatedText={result.translated} />
 
               <div className="flex justify-center">
                 <Button
