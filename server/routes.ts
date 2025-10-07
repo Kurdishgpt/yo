@@ -131,44 +131,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/kurdish-tts", async (req, res) => {
-    try {
-      const { text, speaker } = req.body;
-
-      if (!text) {
-        return res.status(400).json({ error: "No text provided" });
-      }
-
-      const outputAudioPath = path.join("outputs", `voice-${speaker}-${Date.now()}.mp3`);
-      
-      const { stdout, stderr } = await execPromise(
-        `python generate_tts.py "${text.replace(/"/g, '\\"')}" "${speaker || '1_speaker'}" "${outputAudioPath}"`
-      );
-
-      if (stderr) {
-        console.log("TTS generation stderr:", stderr);
-      }
-
-      if (!fs.existsSync(outputAudioPath)) {
-        throw new Error("TTS generation failed - no audio file created");
-      }
-
-      const audioBuffer = fs.readFileSync(outputAudioPath);
-      
-      res.set({
-        'Content-Type': 'audio/mpeg',
-        'Content-Length': audioBuffer.length,
-      });
-      
-      res.send(audioBuffer);
-    } catch (error: any) {
-      console.error("Kurdish TTS error:", error);
-      res.status(500).json({
-        error: error.message || "Failed to generate Kurdish voice",
-      });
-    }
-  });
-
   const httpServer = createServer(app);
   return httpServer;
 }
