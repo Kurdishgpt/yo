@@ -7,7 +7,7 @@ from deep_translator import GoogleTranslator
 import requests
 from pydub import AudioSegment
 
-def transcribe_and_translate(audio_path, output_audio_path):
+def transcribe_and_translate(audio_path, output_audio_path, speaker_key="1_speaker"):
     try:
         # Load the Whisper model (base model for faster processing)
         model = whisper.load_model("base")
@@ -62,7 +62,7 @@ def transcribe_and_translate(audio_path, output_audio_path):
         tts_data = {
             "text": kurdish_text,
             "language": "sorani",
-            "speaker_key": "1_speaker"
+            "speaker_key": speaker_key
         }
         
         headers = {
@@ -70,7 +70,8 @@ def transcribe_and_translate(audio_path, output_audio_path):
             "Content-Type": "application/json"
         }
         
-        print(f"Calling Kurdish TTS API for {len(kurdish_text)} characters...", file=sys.stderr)
+        print(f"Calling Kurdish TTS API with speaker: {speaker_key}", file=sys.stderr)
+        print(f"Text length: {len(kurdish_text)} characters", file=sys.stderr)
         r = requests.post(url, headers=headers, data=json.dumps(tts_data))
         
         print(f"Kurdish TTS API response: {r.status_code}", file=sys.stderr)
@@ -113,10 +114,12 @@ def transcribe_and_translate(audio_path, output_audio_path):
         sys.exit(1)
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        print(json.dumps({"error": "Usage: python whisper_transcribe.py <audio_file> <output_audio_file>"}), file=sys.stderr)
+    if len(sys.argv) < 3:
+        print(json.dumps({"error": "Usage: python whisper_transcribe.py <audio_file> <output_audio_file> [speaker_key]"}), file=sys.stderr)
         sys.exit(1)
     
     audio_path = sys.argv[1]
     output_audio_path = sys.argv[2]
-    transcribe_and_translate(audio_path, output_audio_path)
+    speaker_key = sys.argv[3] if len(sys.argv) > 3 else "1_speaker"
+    
+    transcribe_and_translate(audio_path, output_audio_path, speaker_key)
