@@ -179,10 +179,8 @@ export default function HomePage() {
                     <SelectValue placeholder="Choose a voice" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="1_speaker">Male 1</SelectItem>
-                    <SelectItem value="2_speaker">Male 2</SelectItem>
-                    <SelectItem value="3_speaker">Female 1</SelectItem>
-                    <SelectItem value="4_speaker">Female 2</SelectItem>
+                    <SelectItem value="1_speaker">Kurdish Voice 1</SelectItem>
+                    <SelectItem value="4_speaker">Kurdish Voice 2</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
