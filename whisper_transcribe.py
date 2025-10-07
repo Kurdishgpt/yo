@@ -14,20 +14,26 @@ def separate_audio(audio_path, output_dir):
     """Separate audio into vocals and accompaniment using Demucs"""
     try:
         import subprocess
+        import torch
         
-        print(f"🎵 Separating vocals from background music...", file=sys.stderr)
+        # Determine device (CPU or CUDA)
+        device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        device_msg = 'GPU' if device == 'cuda' else 'CPU (slower)'
+        
+        print(f"🎵 Separating vocals from background music using {device_msg}...", file=sys.stderr)
         
         # Run Demucs to separate audio
         # -n htdemucs: Use the default Hybrid Transformer Demucs model
         # --two-stems vocals: Only separate vocals and accompaniment (faster)
+        # -d cpu/cuda: Specify device
         result = subprocess.run(
-            ['python', '-m', 'demucs', '-n', 'htdemucs', '--two-stems=vocals', audio_path, '-o', output_dir],
+            ['python', '-m', 'demucs', '-n', 'htdemucs', '--two-stems=vocals', '-d', device, audio_path, '-o', output_dir],
             capture_output=True,
             text=True
         )
         
         if result.returncode != 0:
-            print(f"⚠️ Demucs separation failed: {result.stderr}", file=sys.stderr)
+            print(f"⚠️ Demucs separation failed: {result.stderr[:200]}", file=sys.stderr)
             return None, None
         
         # Find the output files
