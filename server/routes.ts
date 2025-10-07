@@ -27,9 +27,9 @@ async function extractAudio(inputPath: string, outputPath: string): Promise<void
   });
 }
 
-async function transcribeWithWhisper(audioPath: string, outputAudioPath: string): Promise<{ text: string; segments: any[]; translated: string; audio_path: string }> {
+async function transcribeWithWhisper(audioPath: string, outputAudioPath: string, speaker: string = "1_speaker"): Promise<{ text: string; segments: any[]; translated: string; audio_path: string }> {
   try {
-    const { stdout, stderr } = await execPromise(`python whisper_transcribe.py "${audioPath}" "${outputAudioPath}"`);
+    const { stdout, stderr } = await execPromise(`python whisper_transcribe.py "${audioPath}" "${outputAudioPath}" "${speaker}"`);
     
     // Log stderr to see TTS API errors and other diagnostic info
     if (stderr) {
@@ -81,6 +81,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const audioPath = path.join("uploads", `audio-${Date.now()}.mp3`);
       const outputAudioPath = path.join("outputs", `kurdish-${Date.now()}.mp3`);
       const timestamp = Date.now();
+      const speaker = req.body.speaker || "1_speaker";
 
       const isVideo = req.file.mimetype.startsWith("video/");
       
@@ -98,7 +99,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         fs.copyFileSync(uploadedFilePath, audioPath);
       }
 
-      const result = await transcribeWithWhisper(audioPath, outputAudioPath);
+      const result = await transcribeWithWhisper(audioPath, outputAudioPath, speaker);
 
       const srtContent = generateSRT(
         result.segments.map((seg: any) => ({
