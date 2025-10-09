@@ -113,3 +113,27 @@ Preferred communication style: Simple, everyday language.
 - Translation API for Kurdish language translation
 - Text-to-speech service for dubbing generation
 - Cloud storage for processed media files
+
+## Deployment Options
+
+### Vercel Deployment
+
+**Configuration Files:**
+- `vercel.json` - Vercel deployment configuration with serverless function settings
+- `api/index.ts` - Serverless function wrapper for Express application
+- `.vercelignore` - Excludes unnecessary files from deployment
+
+**Vercel-Specific Adaptations:**
+- File uploads use `/tmp` directory when `process.env.VERCEL` is set
+- Serverless function configured with 3GB memory and 300s timeout
+- All routes properly configured to handle Express static file serving
+
+**Important Limitations:**
+- Whisper and Demucs models may exceed Vercel's 50MB deployment limit (250MB on Pro)
+- Execution time limits: 10s (Hobby), 60s (Pro), 900s (Enterprise)
+- `/tmp` storage is ephemeral - files don't persist between invocations
+- Recommended to use external model APIs or cloud processing for production
+
+**Documentation:**
+- See `VERCEL_DEPLOYMENT.md` for complete deployment guide
+- Includes environment variable setup, build configuration, and troubleshooting
