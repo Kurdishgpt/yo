@@ -12,7 +12,7 @@ const writeFile = promisify(fs.writeFile);
 const mkdir = promisify(fs.mkdir);
 
 const upload = multer({
-  dest: "uploads/",
+  dest: process.env.VERCEL ? "/tmp/uploads" : "uploads/",
   limits: { fileSize: 100 * 1024 * 1024 }, // 100MB limit
 });
 
@@ -91,10 +91,13 @@ function formatSRTTime(seconds: number): string {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  await mkdir("uploads", { recursive: true });
-  await mkdir("outputs", { recursive: true });
+  const uploadsDir = process.env.VERCEL ? "/tmp/uploads" : "uploads";
+  const outputsDir = process.env.VERCEL ? "/tmp/outputs" : "outputs";
+  
+  await mkdir(uploadsDir, { recursive: true });
+  await mkdir(outputsDir, { recursive: true });
 
-  app.use("/outputs", express.static("outputs"));
+  app.use("/outputs", express.static(outputsDir));
 
   app.post("/api/upload", upload.single("media"), async (req, res) => {
     try {
@@ -103,8 +106,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const uploadedFilePath = req.file.path;
-      const audioPath = path.join("uploads", `audio-${Date.now()}.mp3`);
-      const outputAudioPath = path.join("outputs", `kurdish-${Date.now()}.mp3`);
+      const audioPath = path.join(uploadsDir, `audio-${Date.now()}.mp3`);
+      const outputAudioPath = path.join(outputsDir, `kurdish-${Date.now()}.mp3`);
       const timestamp = Date.now();
       const speaker = req.body.speaker || "1_speaker";
 
@@ -113,12 +116,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Save the original media to outputs folder for viewing
       let originalMediaPath = uploadedFilePath;
       if (isVideo) {
-        const videoOutputPath = path.join("outputs", `original-video-${timestamp}.mp4`);
+        const videoOutputPath = path.join(outputsDir, `original-video-${timestamp}.mp4`);
         fs.copyFileSync(uploadedFilePath, videoOutputPath);
         originalMediaPath = videoOutputPath;
         await extractAudio(uploadedFilePath, audioPath);
       } else {
-        const audioOutputPath = path.join("outputs", `original-audio-${timestamp}.mp3`);
+        const audioOutputPath = path.join(outputsDir, `original-audio-${timestamp}.mp3`);
         fs.copyFileSync(uploadedFilePath, audioOutputPath);
         originalMediaPath = audioOutputPath;
         fs.copyFileSync(uploadedFilePath, audioPath);
