@@ -26,8 +26,12 @@ export async function setupVite(app: Express, server: Server) {
     allowedHosts: true as const,
   };
 
+  const config = typeof viteConfig === 'function' ? viteConfig({ command: 'serve', mode: 'development' }) : viteConfig;
+
   const vite = await createViteServer({
-    ...viteConfig,
+    root: path.resolve(import.meta.dirname, "..", "client"),
+    base: config.base,
+    plugins: config.plugins,
     configFile: false,
     customLogger: {
       ...viteLogger,
@@ -38,6 +42,13 @@ export async function setupVite(app: Express, server: Server) {
     },
     server: serverOptions,
     appType: "custom",
+    resolve: {
+      alias: {
+        '@': path.resolve(import.meta.dirname, "..", "client", "src"),
+        '@shared': path.resolve(import.meta.dirname, "..", "shared"),
+        '@assets': path.resolve(import.meta.dirname, "..", "attached_assets"),
+      },
+    },
   });
 
   app.use(vite.middlewares);
