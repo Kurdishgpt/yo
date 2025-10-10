@@ -4,10 +4,11 @@ import path from 'path'
 
 // ✅ Universal config (works for GitHub Pages, Vercel, Netlify)
 export default defineConfig(({ command }) => ({
-  base: command === 'build' ? '/yo/' : '/', // For GitHub Pages repo
+  root: path.resolve(import.meta.dirname, 'client'),
+  base: '/', // Works for both development and Replit deployment
   plugins: [react({ jsxRuntime: 'automatic' })],
   build: {
-    outDir: 'dist/public',
+    outDir: path.resolve(import.meta.dirname, 'dist/public'),
     emptyOutDir: true,
   },
   server: {
