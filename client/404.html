@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <script>
+      // GitHub Pages SPA redirect trick
+      // This script takes the current URL and redirects to the index page with the full path 
+      // stored in the URL query string, which the app can then use to navigate to the right page
+      const path = window.location.pathname.slice(1);
+      if (path && path !== '404.html') {
+        const pathSegments = path.split('/').slice(1); // Remove 'yo' from path
+        window.location.replace(
+          window.location.origin + 
+          '/yo/' + 
+          (pathSegments.length ? '?redirect=' + pathSegments.join('/') : '')
+        );
+      }
+    </script>
+  </head>
+  <body>
+    <p>Redirecting...</p>
+  </body>
+</html>
