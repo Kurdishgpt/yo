@@ -1,9 +1,9 @@
-modules = ["nodejs-20", "web", "postgresql-16", "python-3.11", "python3"]
+modules = ["nodejs-20", "web", "python-3.11"]
 run = "npm run dev"
 hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
 
 [nix]
-channel = "stable-24_05"
+channel = "stable-25_05"
 packages = ["ffmpeg", "ffmpeg-full"]
 
 [deployment]
@@ -48,6 +48,10 @@ localPort = 39673
 externalPort = 3003
 
 [[ports]]
+localPort = 40859
+externalPort = 8081
+
+[[ports]]
 localPort = 41121
 externalPort = 8008
 
@@ -89,3 +93,4 @@ waitForPort = 5000
 
 [agent]
 integrations = ["javascript_openai:1.0.0"]
+expertMode = true
