@@ -1,12 +1,17 @@
 # GitHub Pages Deployment Guide
 
-## Problem Fixed
-Your GitHub Pages deployment at `https://rahand-tech.github.io/yo/` was showing a "404 Page Not Found" error. This happened because GitHub Pages doesn't natively support Single Page Applications (SPAs) with client-side routing.
+## Problems Fixed
+Your GitHub Pages deployment at `https://rahand-tech.github.io/yo/` had two issues:
+
+1. **404 Page Not Found Error**: GitHub Pages doesn't natively support Single Page Applications (SPAs) with client-side routing
+2. **Build Error**: Replit-specific plugins were breaking the build outside of Replit environment
 
 ## Changes Made
 
 ### 1. **vite.config.ts**
 - Added `base: "/yo/"` configuration so all assets load from the correct subdirectory
+- Made all Replit plugins conditionally loaded (only in development on Replit)
+- Fixed the `@replit/vite-plugin-runtime-error-modal` import to be dynamic
 - Added 404.html to the build output
 
 ### 2. **client/src/App.tsx**
