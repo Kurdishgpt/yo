@@ -72,8 +72,8 @@ After deployment, visit:
 2. **Router**: Wouter router uses the base path for all navigation
 3. **404 Handling**: When someone directly accesses a route (e.g., `/yo/some-page`):
    - GitHub Pages serves the 404.html file
-   - 404.html redirects to index.html with the path as a query parameter
-   - index.html reads the query parameter and navigates to the correct route
+   - 404.html stores the path in sessionStorage and redirects to /yo/
+   - index.html reads from sessionStorage and navigates to the correct route using history.replaceState
 
 ## Testing Locally
 
