@@ -2,28 +2,31 @@
 import sys
 import json
 import os
-from assemblyai import AssemblyAI
+import assemblyai as aai
 from deep_translator import GoogleTranslator
 import requests
 from pydub import AudioSegment
-import tempfile
+import time
 
 def transcribe_and_translate(audio_path, output_audio_path, speaker_key="1_speaker"):
     try:
-        # Initialize AssemblyAI client
+        # Initialize AssemblyAI
         api_key = os.environ.get("ASSEMBLYAI_API_KEY")
         if not api_key:
             raise Exception("ASSEMBLYAI_API_KEY environment variable not set")
         
-        client = AssemblyAI(api_key=api_key)
+        aai.settings.api_key = api_key
         
         # Transcribe the audio using AssemblyAI
         print(f"Transcribing audio with AssemblyAI...", file=sys.stderr)
-        with open(audio_path, "rb") as audio_file:
-            transcript = client.transcriber.transcribe(
-                audio=audio_file,
-                language_detection=True
-            )
+        
+        config = aai.TranscriptionConfig(language_code="auto")
+        transcriber = aai.Transcriber(config=config)
+        
+        transcript = transcriber.transcribe(audio_path)
+        
+        if transcript.status == aai.TranscriptStatus.error:
+            raise Exception(f"Transcription failed: {transcript.error}")
         
         # Get the detected language
         detected_language = transcript.language_code if hasattr(transcript, 'language_code') else "en"
@@ -31,21 +34,24 @@ def transcribe_and_translate(audio_path, output_audio_path, speaker_key="1_speak
         
         # Format the segments for SRT generation
         segments = []
-        if hasattr(transcript, 'words') and transcript.words:
-            current_segment = {"start": 0, "end": 0, "text": ""}
-            for word in transcript.words:
-                if current_segment["text"] and len(current_segment["text"].split()) >= 10:  # Group words into segments
-                    segments.append(current_segment)
-                    current_segment = {"start": word.start / 1000, "end": word.end / 1000, "text": word.text}
+        if transcript.words:
+            for word_obj in transcript.words:
+                word_start = word_obj.start / 1000
+                word_end = word_obj.end / 1000
+                word_text = word_obj.text
+                
+                # Group words into segments
+                if not segments or len(segments[-1]["text"].split()) >= 10:
+                    segments.append({
+                        "start": word_start,
+                        "end": word_end,
+                        "text": word_text
+                    })
                 else:
-                    if not current_segment["text"]:
-                        current_segment["start"] = word.start / 1000
-                    current_segment["text"] += " " + word.text if current_segment["text"] else word.text
-                    current_segment["end"] = word.end / 1000
-            if current_segment["text"]:
-                segments.append(current_segment)
+                    segments[-1]["end"] = word_end
+                    segments[-1]["text"] += " " + word_text
         
-        original_text = transcript.text if hasattr(transcript, 'text') else str(transcript)
+        original_text = transcript.text if hasattr(transcript, 'text') else ""
         
         # Translate to Kurdish Central (Sorani) using deep-translator
         translator = GoogleTranslator(source='auto', target='ckb')
