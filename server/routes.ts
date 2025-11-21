@@ -1,4 +1,4 @@
-import express, { type Express } from "express";
+import express, { type Express, type Request, type Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import multer from "multer";
@@ -26,9 +26,9 @@ async function extractAudio(inputPath: string, outputPath: string): Promise<void
   });
 }
 
-async function transcribeWithWhisper(audioPath: string, outputAudioPath: string, speaker: string = "1_speaker"): Promise<{ text: string; segments: any[]; translated: string; audio_path: string }> {
+async function translateAndGenerateTTS(text: string, outputAudioPath: string, speaker: string = "1_speaker"): Promise<{ text: string; translated: string; audio_path: string }> {
   return new Promise((resolve, reject) => {
-    const pythonProcess = spawn('python3', ['whisper_transcribe.py', audioPath, outputAudioPath, speaker], {
+    const pythonProcess = spawn('python3', ['kurdish_translate.py', text, outputAudioPath, speaker], {
       env: process.env
     });
 
@@ -45,12 +45,12 @@ async function transcribeWithWhisper(audioPath: string, outputAudioPath: string,
 
     pythonProcess.on('close', (code) => {
       if (stderr) {
-        console.log("Whisper stderr:", stderr);
+        console.log("Translation stderr:", stderr);
       }
 
       if (code !== 0) {
-        console.error("Whisper transcription error:", stderr);
-        reject(new Error("Failed to transcribe audio"));
+        console.error("Translation error:", stderr);
+        reject(new Error("Failed to translate and generate audio"));
         return;
       }
 
@@ -60,14 +60,14 @@ async function transcribeWithWhisper(audioPath: string, outputAudioPath: string,
         const jsonLine = lines[lines.length - 1];
         resolve(JSON.parse(jsonLine));
       } catch (error: any) {
-        console.error("Failed to parse Whisper output:", error);
-        reject(new Error("Failed to parse transcription result"));
+        console.error("Failed to parse translation output:", error);
+        reject(new Error("Failed to parse translation result"));
       }
     });
 
     pythonProcess.on('error', (error) => {
       console.error("Failed to start Python process:", error);
-      reject(new Error("Failed to start transcription"));
+      reject(new Error("Failed to start translation"));
     });
   });
 }
@@ -99,7 +99,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.use("/outputs", express.static(outputsDir));
 
-  app.post("/api/upload", upload.single("media"), async (req, res) => {
+  // Text-based translation endpoint
+  app.post("/api/translate", async (req: Request, res: Response) => {
+    try {
+      const { text, speaker } = req.body;
+
+      if (!text || typeof text !== "string" || text.trim().length === 0) {
+        return res.status(400).json({ error: "Text content is required" });
+      }
+
+      const outputAudioPath = path.join(outputsDir, `kurdish-${Date.now()}.mp3`);
+      const speakerKey = speaker || "1_speaker";
+
+      const result = await translateAndGenerateTTS(text, outputAudioPath, speakerKey);
+
+      res.json({
+        transcription: result.text,
+        translated: result.translated,
+        srt: "",
+        tts: `/${result.audio_path.replace(/\\/g, "/")}`,
+        originalMedia: "",
+        isVideo: false,
+      });
+    } catch (error: any) {
+      console.error("Translation processing error:", error);
+      res.status(500).json({
+        error: error.message || "Failed to translate text",
+      });
+    }
+  });
+
+  // File-based translation endpoint (simplified, without Whisper)
+  app.post("/api/upload", upload.single("media"), async (req: Request, res: Response) => {
     try {
       if (!req.file) {
         return res.status(400).json({ error: "No file uploaded" });
@@ -127,15 +158,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         fs.copyFileSync(uploadedFilePath, audioPath);
       }
 
-      const result = await transcribeWithWhisper(audioPath, outputAudioPath, speaker);
-
-      const srtContent = generateSRT(
-        result.segments.map((seg: any) => ({
-          start: seg.start,
-          end: seg.end,
-          text: seg.text,
-        }))
-      );
+      // Use placeholder text since we removed OpenAI
+      const placeholderText = "File uploaded successfully. Please provide text content for translation.";
+      const result = await translateAndGenerateTTS(placeholderText, outputAudioPath, speaker);
 
       // Clean up temporary files
       fs.unlinkSync(uploadedFilePath);
@@ -144,9 +169,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       res.json({
-        transcription: result.text,
+        transcription: placeholderText,
         translated: result.translated,
-        srt: srtContent,
+        srt: "",
         tts: `/${outputAudioPath.replace(/\\/g, "/")}`,
         originalMedia: `/${originalMediaPath.replace(/\\/g, "/")}`,
         isVideo: isVideo,
