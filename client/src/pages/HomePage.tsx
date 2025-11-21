@@ -6,7 +6,6 @@ import { AudioPlayer } from "@/components/AudioPlayer";
 import { VideoPlayer } from "@/components/VideoPlayer";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FileText, Languages, AudioWaveform, Mic2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import axios from "axios";
@@ -28,7 +27,7 @@ type ResultData = {
 
 export default function HomePage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [selectedVoice, setSelectedVoice] = useState("1_speaker");
+  const [selectedVoice, setSelectedVoice] = useState("sorani_85");
   const [isProcessing, setIsProcessing] = useState(false);
   const [steps, setSteps] = useState<ProcessingStep[]>([
     { id: "1", label: "Extracting Audio", status: "pending" },
@@ -181,15 +180,24 @@ export default function HomePage() {
                   <Mic2 className="w-5 h-5 text-primary" />
                   <h3 className="text-lg font-semibold">Select Kurdish Voice</h3>
                 </div>
-                <Select value={selectedVoice} onValueChange={setSelectedVoice}>
-                  <SelectTrigger className="w-full md:w-64" data-testid="select-dubbing-voice">
-                    <SelectValue placeholder="Choose a voice" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1_speaker">Kurdish Voice 1</SelectItem>
-                    <SelectItem value="4_speaker">Kurdish Voice 2</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="flex gap-4">
+                  <Button
+                    variant={selectedVoice === "sorani_85" ? "default" : "outline"}
+                    onClick={() => setSelectedVoice("sorani_85")}
+                    data-testid="button-voice-male"
+                    className="flex-1"
+                  >
+                    Male Voice
+                  </Button>
+                  <Button
+                    variant={selectedVoice === "sorani_214" ? "default" : "outline"}
+                    onClick={() => setSelectedVoice("sorani_214")}
+                    data-testid="button-voice-female"
+                    className="flex-1"
+                  >
+                    Female Voice
+                  </Button>
+                </div>
               </div>
               <FileUpload onFileSelect={handleFileSelect} />
             </div>
