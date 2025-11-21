@@ -102,3 +102,8 @@ waitForPort = 5000
 [agent]
 integrations = ["javascript_openai:1.0.0"]
 expertMode = true
+
+[userenv]
+
+[userenv.shared]
+ASSEMBLYAI_API_KEY = "aafe261b7e1d4556b30bdd185e67476f"

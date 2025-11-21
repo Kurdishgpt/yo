@@ -2,7 +2,7 @@
 import sys
 import json
 import os
-from openai import OpenAI
+from assemblyai import AssemblyAI
 from deep_translator import GoogleTranslator
 import requests
 from pydub import AudioSegment
@@ -10,36 +10,40 @@ import tempfile
 
 def transcribe_and_translate(audio_path, output_audio_path, speaker_key="1_speaker"):
     try:
-        # Initialize OpenAI client
-        api_key = os.environ.get("OPENAI_API_KEY")
+        # Initialize AssemblyAI client
+        api_key = os.environ.get("ASSEMBLYAI_API_KEY")
         if not api_key:
-            raise Exception("OPENAI_API_KEY environment variable not set")
+            raise Exception("ASSEMBLYAI_API_KEY environment variable not set")
         
-        client = OpenAI(api_key=api_key)
+        client = AssemblyAI(api_key=api_key)
         
-        # Transcribe the audio using OpenAI Whisper API
-        print(f"Transcribing audio with OpenAI Whisper API...", file=sys.stderr)
+        # Transcribe the audio using AssemblyAI
+        print(f"Transcribing audio with AssemblyAI...", file=sys.stderr)
         with open(audio_path, "rb") as audio_file:
-            transcript = client.audio.transcriptions.create(
-                model="whisper-1",
-                file=audio_file,
-                response_format="verbose_json",
-                timestamp_granularities=["segment"]
+            transcript = client.transcriber.transcribe(
+                audio=audio_file,
+                language_detection=True
             )
         
         # Get the detected language
-        detected_language = transcript.language if hasattr(transcript, 'language') else "en"
-        print(f"Detected language: {detected_language.title()}", file=sys.stderr)
+        detected_language = transcript.language_code if hasattr(transcript, 'language_code') else "en"
+        print(f"Detected language: {detected_language.upper()}", file=sys.stderr)
         
         # Format the segments for SRT generation
         segments = []
-        if hasattr(transcript, 'segments') and transcript.segments:
-            for seg in transcript.segments:
-                segments.append({
-                    "start": seg.get("start", 0) if isinstance(seg, dict) else getattr(seg, "start", 0),
-                    "end": seg.get("end", 0) if isinstance(seg, dict) else getattr(seg, "end", 0),
-                    "text": (seg.get("text", "") if isinstance(seg, dict) else getattr(seg, "text", "")).strip()
-                })
+        if hasattr(transcript, 'words') and transcript.words:
+            current_segment = {"start": 0, "end": 0, "text": ""}
+            for word in transcript.words:
+                if current_segment["text"] and len(current_segment["text"].split()) >= 10:  # Group words into segments
+                    segments.append(current_segment)
+                    current_segment = {"start": word.start / 1000, "end": word.end / 1000, "text": word.text}
+                else:
+                    if not current_segment["text"]:
+                        current_segment["start"] = word.start / 1000
+                    current_segment["text"] += " " + word.text if current_segment["text"] else word.text
+                    current_segment["end"] = word.end / 1000
+            if current_segment["text"]:
+                segments.append(current_segment)
         
         original_text = transcript.text if hasattr(transcript, 'text') else str(transcript)
         
