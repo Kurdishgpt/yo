@@ -63,8 +63,8 @@ def transcribe_and_translate(audio_path, output_audio_path, speaker_key="1_speak
         translator = GoogleTranslator(source='auto', target='ckb')
         kurdish_text = translator.translate(original_text)
         
-        print(f"Original text length: {len(original_text)} characters", file=sys.stderr)
-        print(f"Kurdish translation length: {len(kurdish_text)} characters", file=sys.stderr)
+        print(f"✅ Original text: {len(original_text)} characters", file=sys.stderr)
+        print(f"✅ Kurdish translation: {len(kurdish_text)} characters", file=sys.stderr)
         
         # Translate segments to Kurdish Central for subtitles
         translated_segments = []
@@ -77,48 +77,51 @@ def transcribe_and_translate(audio_path, output_audio_path, speaker_key="1_speak
                     "text": translated_seg_text
                 })
         
-        # Generate Kurdish TTS audio using the Kurdish TTS API
-        print(f"Generating Kurdish TTS audio...", file=sys.stderr)
-        kurdish_tts_api_key = os.environ.get("KURDISH_TTS_API_KEY")
-        if not kurdish_tts_api_key:
-            raise Exception("KURDISH_TTS_API_KEY environment variable not set")
-        
-        url = "https://www.kurdishtts.com/api/tts-proxy"
-        
-        tts_data = {
-            "text": kurdish_text,
-            "language": "sorani",
-            "speaker_key": speaker_key
-        }
-        
-        headers = {
-            "x-api-key": kurdish_tts_api_key,
-            "Content-Type": "application/json"
-        }
-        
-        print(f"Calling Kurdish TTS API with speaker: {speaker_key}", file=sys.stderr)
-        print(f"Text length for TTS: {len(kurdish_text)} characters", file=sys.stderr)
-        
-        r = requests.post(url, headers=headers, data=json.dumps(tts_data), timeout=30)
-        
-        print(f"Kurdish TTS API response: {r.status_code}", file=sys.stderr)
-        if r.status_code != 200:
-            print(f"TTS API error response: {r.text[:500]}", file=sys.stderr)
-            raise Exception(f"TTS API error: {r.status_code} - {r.text[:200]}")
-        
-        # Save as temporary WAV file
-        temp_wav_path = output_audio_path.replace('.mp3', '.wav')
-        with open(temp_wav_path, "wb") as f:
-            f.write(r.content)
-        
-        # Convert to MP3
-        kurdish_audio = AudioSegment.from_wav(temp_wav_path)
-        kurdish_audio.export(output_audio_path, format="mp3")
-        print(f"✅ Kurdish audio generated successfully", file=sys.stderr)
-        
-        # Clean up temporary WAV file
-        if os.path.exists(temp_wav_path):
-            os.remove(temp_wav_path)
+        # Try to generate Kurdish TTS audio (optional - don't fail if this doesn't work)
+        tts_success = False
+        try:
+            kurdish_tts_api_key = os.environ.get("KURDISH_TTS_API_KEY")
+            if kurdish_tts_api_key:
+                print(f"Attempting Kurdish TTS audio generation...", file=sys.stderr)
+                url = "https://www.kurdishtts.com/api/tts-proxy"
+                
+                tts_data = {
+                    "text": kurdish_text,
+                    "language": "sorani",
+                    "speaker_key": speaker_key
+                }
+                
+                headers = {
+                    "x-api-key": kurdish_tts_api_key,
+                    "Content-Type": "application/json"
+                }
+                
+                r = requests.post(url, headers=headers, data=json.dumps(tts_data), timeout=30)
+                
+                if r.status_code == 200:
+                    # Save as temporary WAV file
+                    temp_wav_path = output_audio_path.replace('.mp3', '.wav')
+                    with open(temp_wav_path, "wb") as f:
+                        f.write(r.content)
+                    
+                    # Convert to MP3
+                    kurdish_audio = AudioSegment.from_wav(temp_wav_path)
+                    kurdish_audio.export(output_audio_path, format="mp3")
+                    
+                    # Clean up temporary WAV file
+                    if os.path.exists(temp_wav_path):
+                        os.remove(temp_wav_path)
+                    
+                    tts_success = True
+                    print(f"✅ Kurdish TTS audio generated successfully", file=sys.stderr)
+                else:
+                    print(f"⚠️ TTS API returned {r.status_code}: {r.text[:200]}", file=sys.stderr)
+                    print(f"⚠️ Continuing without TTS audio (transcription and translation successful)", file=sys.stderr)
+            else:
+                print(f"⚠️ KURDISH_TTS_API_KEY not set - skipping TTS audio generation", file=sys.stderr)
+        except Exception as tts_error:
+            print(f"⚠️ TTS generation failed: {str(tts_error)}", file=sys.stderr)
+            print(f"⚠️ Continuing without TTS audio (transcription and translation successful)", file=sys.stderr)
         
         # Return the result as JSON
         output = {
@@ -126,7 +129,8 @@ def transcribe_and_translate(audio_path, output_audio_path, speaker_key="1_speak
             "segments": segments,
             "translated": kurdish_text,
             "translated_segments": translated_segments,
-            "audio_path": output_audio_path
+            "audio_path": output_audio_path if tts_success else None,
+            "tts_available": tts_success
         }
         
         print(json.dumps(output))
