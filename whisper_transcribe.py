@@ -6,7 +6,6 @@ import assemblyai as aai
 from deep_translator import GoogleTranslator
 import requests
 from pydub import AudioSegment
-import time
 
 def transcribe_and_translate(audio_path, output_audio_path, speaker_key="1_speaker"):
     try:
@@ -17,10 +16,11 @@ def transcribe_and_translate(audio_path, output_audio_path, speaker_key="1_speak
         
         aai.settings.api_key = api_key
         
-        # Transcribe the audio using AssemblyAI
+        # Transcribe the audio using AssemblyAI without specifying language (auto-detect)
         print(f"Transcribing audio with AssemblyAI...", file=sys.stderr)
         
-        config = aai.TranscriptionConfig(language_code="auto")
+        # Don't specify language_code - let AssemblyAI auto-detect
+        config = aai.TranscriptionConfig()
         transcriber = aai.Transcriber(config=config)
         
         transcript = transcriber.transcribe(audio_path)
