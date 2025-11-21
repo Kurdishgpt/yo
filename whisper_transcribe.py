@@ -16,31 +16,36 @@ def transcribe_and_translate(audio_path, output_audio_path, speaker_key="1_speak
         
         aai.settings.api_key = api_key
         
-        # Transcribe the audio using AssemblyAI without specifying language (auto-detect)
+        # Transcribe the audio using AssemblyAI
         print(f"Transcribing audio with AssemblyAI...", file=sys.stderr)
         
-        # Don't specify language_code - let AssemblyAI auto-detect
-        config = aai.TranscriptionConfig()
-        transcriber = aai.Transcriber(config=config)
+        # Create transcriber with default config
+        transcriber = aai.Transcriber()
         
+        # Transcribe the audio file
         transcript = transcriber.transcribe(audio_path)
         
+        # Check for errors
         if transcript.status == aai.TranscriptStatus.error:
-            raise Exception(f"Transcription failed: {transcript.error}")
+            raise Exception(f"AssemblyAI transcription error: {transcript.error}")
+        
+        # Ensure transcription was successful
+        if not transcript.text:
+            raise Exception("AssemblyAI returned empty transcription")
         
         # Get the detected language
-        detected_language = transcript.language_code if hasattr(transcript, 'language_code') else "en"
+        detected_language = getattr(transcript, 'language_code', 'en')
         print(f"Detected language: {detected_language.upper()}", file=sys.stderr)
         
         # Format the segments for SRT generation
         segments = []
-        if transcript.words:
+        if hasattr(transcript, 'words') and transcript.words:
             for word_obj in transcript.words:
                 word_start = word_obj.start / 1000
                 word_end = word_obj.end / 1000
                 word_text = word_obj.text
                 
-                # Group words into segments
+                # Group words into segments (roughly 10 words per segment)
                 if not segments or len(segments[-1]["text"].split()) >= 10:
                     segments.append({
                         "start": word_start,
@@ -51,14 +56,15 @@ def transcribe_and_translate(audio_path, output_audio_path, speaker_key="1_speak
                     segments[-1]["end"] = word_end
                     segments[-1]["text"] += " " + word_text
         
-        original_text = transcript.text if hasattr(transcript, 'text') else ""
+        original_text = transcript.text
         
         # Translate to Kurdish Central (Sorani) using deep-translator
+        print(f"Translating to Kurdish...", file=sys.stderr)
         translator = GoogleTranslator(source='auto', target='ckb')
         kurdish_text = translator.translate(original_text)
         
-        print(f"Original text: {original_text[:100]}...", file=sys.stderr)
-        print(f"Kurdish translation: {kurdish_text[:100]}...", file=sys.stderr)
+        print(f"Original text length: {len(original_text)} characters", file=sys.stderr)
+        print(f"Kurdish translation length: {len(kurdish_text)} characters", file=sys.stderr)
         
         # Translate segments to Kurdish Central for subtitles
         translated_segments = []
@@ -72,7 +78,11 @@ def transcribe_and_translate(audio_path, output_audio_path, speaker_key="1_speak
                 })
         
         # Generate Kurdish TTS audio using the Kurdish TTS API
+        print(f"Generating Kurdish TTS audio...", file=sys.stderr)
         kurdish_tts_api_key = os.environ.get("KURDISH_TTS_API_KEY")
+        if not kurdish_tts_api_key:
+            raise Exception("KURDISH_TTS_API_KEY environment variable not set")
+        
         url = "https://www.kurdishtts.com/api/tts-proxy"
         
         tts_data = {
@@ -87,32 +97,28 @@ def transcribe_and_translate(audio_path, output_audio_path, speaker_key="1_speak
         }
         
         print(f"Calling Kurdish TTS API with speaker: {speaker_key}", file=sys.stderr)
-        print(f"Text length: {len(kurdish_text)} characters", file=sys.stderr)
-        r = requests.post(url, headers=headers, data=json.dumps(tts_data))
+        print(f"Text length for TTS: {len(kurdish_text)} characters", file=sys.stderr)
+        
+        r = requests.post(url, headers=headers, data=json.dumps(tts_data), timeout=30)
         
         print(f"Kurdish TTS API response: {r.status_code}", file=sys.stderr)
         if r.status_code != 200:
             print(f"TTS API error response: {r.text[:500]}", file=sys.stderr)
+            raise Exception(f"TTS API error: {r.status_code} - {r.text[:200]}")
         
-        if r.status_code == 200:
-            # Save as temporary WAV file
-            temp_wav_path = output_audio_path.replace('.mp3', '.wav')
-            with open(temp_wav_path, "wb") as f:
-                f.write(r.content)
-            
-            # Convert to MP3
-            kurdish_audio = AudioSegment.from_wav(temp_wav_path)
-            kurdish_audio.export(output_audio_path, format="mp3")
-            print(f"✅ Kurdish audio generated successfully", file=sys.stderr)
-            
-            # Clean up temporary WAV file
-            if os.path.exists(temp_wav_path):
-                os.remove(temp_wav_path)
-        else:
-            print(f"⚠️ TTS API error: {r.status_code} - Using placeholder", file=sys.stderr)
-            # Create a simple placeholder audio file
-            silence = AudioSegment.silent(duration=1000)
-            silence.export(output_audio_path, format="mp3")
+        # Save as temporary WAV file
+        temp_wav_path = output_audio_path.replace('.mp3', '.wav')
+        with open(temp_wav_path, "wb") as f:
+            f.write(r.content)
+        
+        # Convert to MP3
+        kurdish_audio = AudioSegment.from_wav(temp_wav_path)
+        kurdish_audio.export(output_audio_path, format="mp3")
+        print(f"✅ Kurdish audio generated successfully", file=sys.stderr)
+        
+        # Clean up temporary WAV file
+        if os.path.exists(temp_wav_path):
+            os.remove(temp_wav_path)
         
         # Return the result as JSON
         output = {
