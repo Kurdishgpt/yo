@@ -209,47 +209,33 @@ export default function HomePage() {
                   </div>
 
                   {/* Gender Selector */}
-                  <div className="mb-8">
-                    <div className="flex gap-4">
-                      <Button
-                        variant={selectedGender === "male" ? "default" : "outline"}
-                        onClick={() => {
-                          setSelectedGender("male");
-                          setSelectedVoiceId("sorani_male_1");
-                        }}
-                        data-testid="button-gender-male"
-                        className={`flex-1 h-16 gap-3 text-base font-semibold transition-all duration-200 ${
-                          selectedGender === "male"
-                            ? "shadow-lg hover:shadow-xl"
-                            : "hover:border-primary/50"
-                        }`}
-                      >
-                        <UserRound className="w-5 h-5" />
-                        <div className="flex flex-col items-start gap-0.5">
-                          <span>Male Voices</span>
-                          <span className="text-xs font-normal opacity-80">75 options</span>
-                        </div>
-                      </Button>
-                      <Button
-                        variant={selectedGender === "female" ? "default" : "outline"}
-                        onClick={() => {
-                          setSelectedGender("female");
-                          setSelectedVoiceId("sorani_female_1");
-                        }}
-                        data-testid="button-gender-female"
-                        className={`flex-1 h-16 gap-3 text-base font-semibold transition-all duration-200 ${
-                          selectedGender === "female"
-                            ? "shadow-lg hover:shadow-xl"
-                            : "hover:border-primary/50"
-                        }`}
-                      >
-                        <User className="w-5 h-5" />
-                        <div className="flex flex-col items-start gap-0.5">
-                          <span>Female Voices</span>
-                          <span className="text-xs font-normal opacity-80">25 options</span>
-                        </div>
-                      </Button>
-                    </div>
+                  <div className="mb-8 flex gap-3">
+                    <Button
+                      size="icon"
+                      variant={selectedGender === "male" ? "default" : "outline"}
+                      onClick={() => {
+                        setSelectedGender("male");
+                        setSelectedVoiceId("sorani_male_1");
+                      }}
+                      data-testid="button-gender-male"
+                      className="w-12 h-12 transition-all duration-200"
+                      title="Male Voice"
+                    >
+                      <UserRound className="w-5 h-5" />
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant={selectedGender === "female" ? "default" : "outline"}
+                      onClick={() => {
+                        setSelectedGender("female");
+                        setSelectedVoiceId("sorani_female_1");
+                      }}
+                      data-testid="button-gender-female"
+                      className="w-12 h-12 transition-all duration-200"
+                      title="Female Voice"
+                    >
+                      <User className="w-5 h-5" />
+                    </Button>
                   </div>
 
                   {/* Voice Selector */}
