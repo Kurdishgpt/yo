@@ -6,9 +6,24 @@ import { AudioPlayer } from "@/components/AudioPlayer";
 import { VideoPlayer } from "@/components/VideoPlayer";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FileText, Languages, AudioWaveform, Mic2, UserRound, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import axios from "axios";
+
+// Voice configuration
+const VOICES = {
+  male: Array.from({ length: 75 }, (_, i) => ({
+    id: `sorani_male_${i + 1}`,
+    name: `Male Voice ${i + 1}`,
+    speaker_key: "sorani_85"
+  })),
+  female: Array.from({ length: 25 }, (_, i) => ({
+    id: `sorani_female_${i + 1}`,
+    name: `Female Voice ${i + 1}`,
+    speaker_key: "sorani_214"
+  }))
+};
 
 type ProcessingStep = {
   id: string;
@@ -25,9 +40,14 @@ type ResultData = {
   isVideo?: boolean;
 };
 
+type VoiceGender = "male" | "female";
+
 export default function HomePage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [selectedVoice, setSelectedVoice] = useState("sorani_85");
+  const [selectedGender, setSelectedGender] = useState<VoiceGender>("male");
+  const [selectedVoiceId, setSelectedVoiceId] = useState<string>("sorani_male_1");
+  
+  const selectedVoice = VOICES[selectedGender].find(v => v.id === selectedVoiceId) || VOICES[selectedGender][0];
   const [isProcessing, setIsProcessing] = useState(false);
   const [steps, setSteps] = useState<ProcessingStep[]>([
     { id: "1", label: "Extracting Audio", status: "pending" },
@@ -46,7 +66,7 @@ export default function HomePage() {
     
     const formData = new FormData();
     formData.append("media", file);
-    formData.append("speaker", selectedVoice);
+    formData.append("speaker", selectedVoice.speaker_key);
 
     try {
       updateStep("1", "processing");
@@ -184,61 +204,52 @@ export default function HomePage() {
                     </div>
                     <h3 className="text-xl font-semibold">Select Kurdish Voice</h3>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Button
-                      variant={selectedVoice === "sorani_85" ? "default" : "outline"}
-                      onClick={() => setSelectedVoice("sorani_85")}
-                      data-testid="button-voice-male"
-                      size="lg"
-                      className="h-auto py-6 px-6 justify-start gap-4 text-left transition-all duration-200 hover:scale-[1.02]"
-                    >
-                      <div 
-                        className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                          selectedVoice === "sorani_85" ? "bg-primary-foreground/20" : "bg-muted"
-                        }`}
-                        data-testid="icon-voice-male"
+                  {/* Gender Selector */}
+                  <div className="mb-6">
+                    <p className="text-sm font-medium text-muted-foreground mb-3">Voice Gender</p>
+                    <div className="flex gap-3">
+                      <Button
+                        variant={selectedGender === "male" ? "default" : "outline"}
+                        onClick={() => {
+                          setSelectedGender("male");
+                          setSelectedVoiceId("sorani_male_1");
+                        }}
+                        data-testid="button-gender-male"
+                        className="flex-1 gap-2"
                       >
-                        <UserRound className="w-6 h-6" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="font-semibold text-base" data-testid="text-voice-male-title">Male Voice</div>
-                        <div 
-                          className={`text-sm ${
-                            selectedVoice === "sorani_85" ? "text-primary-foreground/70" : "text-muted-foreground"
-                          }`}
-                          data-testid="text-voice-male-language"
-                        >
-                          Sorani Kurdish
-                        </div>
-                      </div>
-                    </Button>
-                    <Button
-                      variant={selectedVoice === "sorani_214" ? "default" : "outline"}
-                      onClick={() => setSelectedVoice("sorani_214")}
-                      data-testid="button-voice-female"
-                      size="lg"
-                      className="h-auto py-6 px-6 justify-start gap-4 text-left transition-all duration-200 hover:scale-[1.02]"
-                    >
-                      <div 
-                        className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                          selectedVoice === "sorani_214" ? "bg-primary-foreground/20" : "bg-muted"
-                        }`}
-                        data-testid="icon-voice-female"
+                        <UserRound className="w-4 h-4" />
+                        Male Voices (75)
+                      </Button>
+                      <Button
+                        variant={selectedGender === "female" ? "default" : "outline"}
+                        onClick={() => {
+                          setSelectedGender("female");
+                          setSelectedVoiceId("sorani_female_1");
+                        }}
+                        data-testid="button-gender-female"
+                        className="flex-1 gap-2"
                       >
-                        <User className="w-6 h-6" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="font-semibold text-base" data-testid="text-voice-female-title">Female Voice</div>
-                        <div 
-                          className={`text-sm ${
-                            selectedVoice === "sorani_214" ? "text-primary-foreground/70" : "text-muted-foreground"
-                          }`}
-                          data-testid="text-voice-female-language"
-                        >
-                          Sorani Kurdish
-                        </div>
-                      </div>
-                    </Button>
+                        <User className="w-4 h-4" />
+                        Female Voices (25)
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Voice Selector */}
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground mb-3">Choose Voice</p>
+                    <Select value={selectedVoiceId} onValueChange={setSelectedVoiceId}>
+                      <SelectTrigger data-testid="select-voice" className="w-full">
+                        <SelectValue placeholder="Select a voice" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {VOICES[selectedGender].map((voice) => (
+                          <SelectItem key={voice.id} value={voice.id} data-testid={`option-${voice.id}`}>
+                            {voice.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
                 <FileUpload onFileSelect={handleFileSelect} />
