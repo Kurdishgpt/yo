@@ -211,7 +211,7 @@ export default function HomePage() {
                   </div>
 
                   {/* Gender Selector */}
-                  <div className="mb-8 flex gap-4">
+                  <div className="mb-8 flex justify-between items-center">
                     <Button
                       variant={selectedGender === "male" ? "default" : "outline"}
                       onClick={() => {
