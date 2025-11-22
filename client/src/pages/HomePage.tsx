@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { FileText, Languages, AudioWaveform, Mic2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import axios from "axios";
-import boyIcon from "@assets/generated_images/kurdish_boy_with_traditional_clothing.png";
+import boyIcon from "@assets/generated_images/beautiful_kurdish_boy_with_traditional_clothing.png";
 import girlIcon from "@assets/generated_images/kurdish_girl_with_traditional_clothing.png";
 
 // Voice configuration
