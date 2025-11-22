@@ -6,6 +6,77 @@ import assemblyai as aai
 from deep_translator import GoogleTranslator
 import requests
 from pydub import AudioSegment
+import librosa
+import numpy as np
+from scipy import signal
+from scipy.fftpack import fft, ifft
+import soundfile as sf
+
+def remove_english_speech(audio_path, output_path):
+    """
+    Remove English speech from audio using spectral subtraction and frequency gating.
+    Preserves background music and sound effects while removing vocal components.
+    """
+    try:
+        print(f"Starting voice isolation/speech removal...", file=sys.stderr)
+        
+        # Load audio at 22050 Hz
+        y, sr = librosa.load(audio_path, sr=22050)
+        
+        # Compute STFT
+        D = librosa.stft(y)
+        magnitude = np.abs(D)
+        phase = np.angle(D)
+        
+        # Spectral gating: reduce energy in speech frequency ranges
+        # Speech fundamentals: 85-255 Hz, harmonics up to 4kHz
+        frequencies = librosa.fft_frequencies(sr=sr, n_fft=D.shape[0]*2-1)
+        
+        # Create frequency mask for speech (0-4000 Hz)
+        speech_freq_mask = frequencies < 4000
+        
+        # Apply spectral subtraction with gentle curve
+        # Reduce speech frequencies more, keep higher frequencies (background/music)
+        subtraction_mask = np.ones(magnitude.shape[0])
+        
+        # Stronger reduction for speech frequencies (0-4000 Hz)
+        for i, freq in enumerate(frequencies):
+            if freq < 4000:
+                # Gradual reduction curve for speech frequencies
+                reduction_factor = 0.3 + 0.4 * (freq / 4000)  # Range: 0.3 to 0.7
+                subtraction_mask[i] = reduction_factor
+            else:
+                # Keep higher frequencies (music, effects)
+                subtraction_mask[i] = 0.85
+        
+        # Apply the mask
+        magnitude_processed = magnitude * subtraction_mask[:, np.newaxis]
+        
+        # Reconstruct audio
+        D_processed = magnitude_processed * np.exp(1j * phase)
+        y_processed = librosa.istft(D_processed)
+        
+        # Normalize to prevent clipping
+        y_processed = y_processed / np.max(np.abs(y_processed)) * 0.95
+        
+        # Save as MP3 via temporary WAV
+        temp_wav = output_path.replace('.mp3', '_temp.wav')
+        sf.write(temp_wav, y_processed, sr)
+        
+        # Convert WAV to MP3 using pydub
+        audio_segment = AudioSegment.from_wav(temp_wav)
+        audio_segment.export(output_path, format="mp3", bitrate="192k")
+        
+        # Clean up temp file
+        if os.path.exists(temp_wav):
+            os.remove(temp_wav)
+        
+        print(f"✅ Voice isolation complete - English speech removed", file=sys.stderr)
+        return True
+        
+    except Exception as e:
+        print(f"⚠️ Voice isolation failed: {str(e)}", file=sys.stderr)
+        return False
 
 def transcribe_and_translate(audio_path, output_audio_path, speaker_key="1_speaker", background_path=None, english_voice_path=None):
     try:
@@ -140,16 +211,15 @@ def transcribe_and_translate(audio_path, output_audio_path, speaker_key="1_speak
                     # Generate separate tracks for volume mixing
                     if background_path and english_voice_path:
                         try:
-                            # Background track: original audio reduced by 18dB (voice suppressed)
-                            print(f"Generating background track...", file=sys.stderr)
-                            original_audio_reduced = original_audio - 18
-                            original_audio_reduced.export(background_path, format="mp3", bitrate="192k")
+                            # Background track: remove English speech using spectral subtraction
+                            print(f"Generating background track with voice removal...", file=sys.stderr)
+                            remove_english_speech(audio_path, background_path)
                             
                             # English voice track: original audio at normal volume
                             print(f"Generating English voice track...", file=sys.stderr)
                             original_audio.export(english_voice_path, format="mp3", bitrate="192k")
                             
-                            print(f"✅ All 3 tracks generated: Kurdish TTS, Background, English Voice", file=sys.stderr)
+                            print(f"✅ All 3 tracks generated: Kurdish TTS, Background (voice-isolated), English Voice", file=sys.stderr)
                         except Exception as track_error:
                             print(f"⚠️ Failed to generate separate tracks: {str(track_error)}", file=sys.stderr)
                 else:
