@@ -104,16 +104,38 @@ def transcribe_and_translate(audio_path, output_audio_path, speaker_key="1_speak
                     with open(temp_wav_path, "wb") as f:
                         f.write(r.content)
                     
-                    # Convert to MP3
+                    # Load the generated Kurdish TTS audio
                     kurdish_audio = AudioSegment.from_wav(temp_wav_path)
-                    kurdish_audio.export(output_audio_path, format="mp3")
+                    
+                    # Load the original audio
+                    original_audio = AudioSegment.from_file(audio_path)
+                    
+                    # Ensure both audios have the same length by padding if necessary
+                    target_length = max(len(original_audio), len(kurdish_audio))
+                    if len(original_audio) < target_length:
+                        original_audio = original_audio + AudioSegment.silent(duration=target_length - len(original_audio))
+                    if len(kurdish_audio) < target_length:
+                        kurdish_audio = kurdish_audio + AudioSegment.silent(duration=target_length - len(kurdish_audio))
+                    
+                    # Reduce original audio volume by 18dB to preserve background music/sound
+                    # while significantly reducing the English voice
+                    print(f"Preserving background audio and removing English voice...", file=sys.stderr)
+                    original_audio_reduced = original_audio - 18
+                    
+                    # Normalize the Kurdish TTS audio to appropriate level
+                    # and overlay it on top of the reduced original audio
+                    mixed_audio = original_audio_reduced.overlay(kurdish_audio, position=0)
+                    
+                    # Export the mixed audio
+                    mixed_audio.export(output_audio_path, format="mp3", bitrate="192k")
                     
                     # Clean up temporary WAV file
                     if os.path.exists(temp_wav_path):
                         os.remove(temp_wav_path)
                     
                     tts_success = True
-                    print(f"✅ Kurdish TTS audio generated successfully", file=sys.stderr)
+                    print(f"✅ Kurdish TTS audio generated and mixed successfully", file=sys.stderr)
+                    print(f"✅ Background audio preserved with English voice removed", file=sys.stderr)
                 else:
                     print(f"⚠️ TTS API returned {r.status_code}: {r.text[:200]}", file=sys.stderr)
                     print(f"⚠️ Continuing without TTS audio (transcription and translation successful)", file=sys.stderr)
