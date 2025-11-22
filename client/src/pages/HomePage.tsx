@@ -197,17 +197,20 @@ export default function HomePage() {
 
             {!isProcessing && !result && (
               <div className="max-w-4xl mx-auto space-y-8">
-                <div className="bg-card rounded-xl border shadow-lg hover:shadow-xl transition-all duration-300 p-8">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <Mic2 className="w-5 h-5 text-primary" />
+                <div className="bg-gradient-to-br from-card to-card/95 rounded-2xl border border-primary/10 shadow-xl hover:shadow-2xl transition-all duration-300 p-10">
+                  <div className="flex items-center gap-4 mb-8">
+                    <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
+                      <Mic2 className="w-7 h-7 text-primary" />
                     </div>
-                    <h3 className="text-xl font-semibold">Select Kurdish Voice</h3>
+                    <div>
+                      <h3 className="text-2xl font-bold">Select Kurdish Voice</h3>
+                      <p className="text-sm text-muted-foreground">Choose your preferred voice for dubbing</p>
+                    </div>
                   </div>
+
                   {/* Gender Selector */}
-                  <div className="mb-6">
-                    <p className="text-sm font-medium text-muted-foreground mb-3">Voice Gender</p>
-                    <div className="flex gap-3">
+                  <div className="mb-8">
+                    <div className="flex gap-4">
                       <Button
                         variant={selectedGender === "male" ? "default" : "outline"}
                         onClick={() => {
@@ -215,10 +218,17 @@ export default function HomePage() {
                           setSelectedVoiceId("sorani_male_1");
                         }}
                         data-testid="button-gender-male"
-                        className="flex-1 gap-2"
+                        className={`flex-1 h-16 gap-3 text-base font-semibold transition-all duration-200 ${
+                          selectedGender === "male"
+                            ? "shadow-lg hover:shadow-xl"
+                            : "hover:border-primary/50"
+                        }`}
                       >
-                        <UserRound className="w-4 h-4" />
-                        Male Voices (75)
+                        <UserRound className="w-5 h-5" />
+                        <div className="flex flex-col items-start gap-0.5">
+                          <span>Male Voices</span>
+                          <span className="text-xs font-normal opacity-80">75 options</span>
+                        </div>
                       </Button>
                       <Button
                         variant={selectedGender === "female" ? "default" : "outline"}
@@ -227,24 +237,44 @@ export default function HomePage() {
                           setSelectedVoiceId("sorani_female_1");
                         }}
                         data-testid="button-gender-female"
-                        className="flex-1 gap-2"
+                        className={`flex-1 h-16 gap-3 text-base font-semibold transition-all duration-200 ${
+                          selectedGender === "female"
+                            ? "shadow-lg hover:shadow-xl"
+                            : "hover:border-primary/50"
+                        }`}
                       >
-                        <User className="w-4 h-4" />
-                        Female Voices (25)
+                        <User className="w-5 h-5" />
+                        <div className="flex flex-col items-start gap-0.5">
+                          <span>Female Voices</span>
+                          <span className="text-xs font-normal opacity-80">25 options</span>
+                        </div>
                       </Button>
                     </div>
                   </div>
 
                   {/* Voice Selector */}
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground mb-3">Choose Voice</p>
+                  <div className="space-y-3">
+                    <div className="flex items-baseline justify-between">
+                      <label className="text-sm font-semibold text-foreground">Choose Voice</label>
+                      <span className="text-xs text-muted-foreground">
+                        {selectedVoice.name}
+                      </span>
+                    </div>
                     <Select value={selectedVoiceId} onValueChange={setSelectedVoiceId}>
-                      <SelectTrigger data-testid="select-voice" className="w-full">
+                      <SelectTrigger 
+                        data-testid="select-voice" 
+                        className="w-full h-12 text-base border-2 border-primary/20 hover:border-primary/40 focus:border-primary bg-background/50 rounded-lg transition-colors"
+                      >
                         <SelectValue placeholder="Select a voice" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-card border border-primary/10">
                         {VOICES[selectedGender].map((voice) => (
-                          <SelectItem key={voice.id} value={voice.id} data-testid={`option-${voice.id}`}>
+                          <SelectItem 
+                            key={voice.id} 
+                            value={voice.id} 
+                            data-testid={`option-${voice.id}`}
+                            className="cursor-pointer hover:bg-primary/10"
+                          >
                             {voice.name}
                           </SelectItem>
                         ))}
