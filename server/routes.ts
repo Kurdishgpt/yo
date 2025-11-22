@@ -26,9 +26,9 @@ async function extractAudio(inputPath: string, outputPath: string): Promise<void
   });
 }
 
-async function transcribeWithWhisper(audioPath: string, outputAudioPath: string, speaker: string = "1_speaker"): Promise<{ text: string; segments: any[]; translated: string; audio_path: string }> {
+async function transcribeWithWhisper(audioPath: string, outputAudioPath: string, backgroundPath: string, englishVoicePath: string, speaker: string = "1_speaker"): Promise<{ text: string; segments: any[]; translated: string; audio_path: string; background_path?: string; english_voice_path?: string }> {
   return new Promise((resolve, reject) => {
-    const pythonProcess = spawn('python3', ['whisper_transcribe.py', audioPath, outputAudioPath, speaker], {
+    const pythonProcess = spawn('python3', ['whisper_transcribe.py', audioPath, outputAudioPath, speaker, backgroundPath, englishVoicePath], {
       env: process.env
     });
 
@@ -107,9 +107,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const uploadedFilePath = req.file.path;
       const audioPath = path.join(uploadsDir, `audio-${Date.now()}.mp3`);
-      const outputAudioPath = path.join(outputsDir, `kurdish-${Date.now()}.mp3`);
       const timestamp = Date.now();
       const speaker = req.body.speaker || "1_speaker";
+      
+      // Generate paths for 3 separate audio tracks
+      const outputAudioPath = path.join(outputsDir, `kurdish-dubbed-${timestamp}.mp3`);
+      const backgroundAudioPath = path.join(outputsDir, `background-${timestamp}.mp3`);
+      const englishVoiceAudioPath = path.join(outputsDir, `english-voice-${timestamp}.mp3`);
 
       const isVideo = req.file.mimetype.startsWith("video/");
       
@@ -127,7 +131,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         fs.copyFileSync(uploadedFilePath, audioPath);
       }
 
-      const result = await transcribeWithWhisper(audioPath, outputAudioPath, speaker);
+      const result = await transcribeWithWhisper(audioPath, outputAudioPath, backgroundAudioPath, englishVoiceAudioPath, speaker);
 
       const srtContent = generateSRT(
         result.segments.map((seg: any) => ({
@@ -148,6 +152,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         translated: result.translated,
         srt: srtContent,
         tts: `/${outputAudioPath.replace(/\\/g, "/")}`,
+        background: `/${backgroundAudioPath.replace(/\\/g, "/")}`,
+        englishVoice: `/${englishVoiceAudioPath.replace(/\\/g, "/")}`,
         originalMedia: `/${originalMediaPath.replace(/\\/g, "/")}`,
         isVideo: isVideo,
       });

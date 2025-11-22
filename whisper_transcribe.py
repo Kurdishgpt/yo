@@ -7,7 +7,7 @@ from deep_translator import GoogleTranslator
 import requests
 from pydub import AudioSegment
 
-def transcribe_and_translate(audio_path, output_audio_path, speaker_key="1_speaker"):
+def transcribe_and_translate(audio_path, output_audio_path, speaker_key="1_speaker", background_path=None, english_voice_path=None):
     try:
         # Initialize AssemblyAI
         api_key = os.environ.get("ASSEMBLYAI_API_KEY")
@@ -136,6 +136,22 @@ def transcribe_and_translate(audio_path, output_audio_path, speaker_key="1_speak
                     tts_success = True
                     print(f"✅ Kurdish TTS audio generated and mixed successfully", file=sys.stderr)
                     print(f"✅ Background audio preserved with English voice removed", file=sys.stderr)
+                    
+                    # Generate separate tracks for volume mixing
+                    if background_path and english_voice_path:
+                        try:
+                            # Background track: original audio reduced by 18dB (voice suppressed)
+                            print(f"Generating background track...", file=sys.stderr)
+                            original_audio_reduced = original_audio - 18
+                            original_audio_reduced.export(background_path, format="mp3", bitrate="192k")
+                            
+                            # English voice track: original audio at normal volume
+                            print(f"Generating English voice track...", file=sys.stderr)
+                            original_audio.export(english_voice_path, format="mp3", bitrate="192k")
+                            
+                            print(f"✅ All 3 tracks generated: Kurdish TTS, Background, English Voice", file=sys.stderr)
+                        except Exception as track_error:
+                            print(f"⚠️ Failed to generate separate tracks: {str(track_error)}", file=sys.stderr)
                 else:
                     print(f"⚠️ TTS API returned {r.status_code}: {r.text[:200]}", file=sys.stderr)
                     print(f"⚠️ Continuing without TTS audio (transcription and translation successful)", file=sys.stderr)
@@ -152,6 +168,8 @@ def transcribe_and_translate(audio_path, output_audio_path, speaker_key="1_speak
             "translated": kurdish_text,
             "translated_segments": translated_segments,
             "audio_path": output_audio_path if tts_success else None,
+            "background_path": background_path,
+            "english_voice_path": english_voice_path,
             "tts_available": tts_success
         }
         
@@ -163,11 +181,13 @@ def transcribe_and_translate(audio_path, output_audio_path, speaker_key="1_speak
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
-        print(json.dumps({"error": "Usage: python whisper_transcribe.py <audio_file> <output_audio_file> [speaker_key]"}), file=sys.stderr)
+        print(json.dumps({"error": "Usage: python whisper_transcribe.py <audio_file> <output_audio_file> [speaker_key] [background_path] [english_voice_path]"}), file=sys.stderr)
         sys.exit(1)
     
     audio_path = sys.argv[1]
     output_audio_path = sys.argv[2]
     speaker_key = sys.argv[3] if len(sys.argv) > 3 else "1_speaker"
+    background_path = sys.argv[4] if len(sys.argv) > 4 else None
+    english_voice_path = sys.argv[5] if len(sys.argv) > 5 else None
     
-    transcribe_and_translate(audio_path, output_audio_path, speaker_key)
+    transcribe_and_translate(audio_path, output_audio_path, speaker_key, background_path, english_voice_path)

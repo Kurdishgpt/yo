@@ -4,6 +4,7 @@ import { ProcessingStatus } from "@/components/ProcessingStatus";
 import { ResultCard } from "@/components/ResultCard";
 import { AudioPlayer } from "@/components/AudioPlayer";
 import { VideoPlayer } from "@/components/VideoPlayer";
+import { AudioMixer } from "@/components/AudioMixer";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -38,6 +39,8 @@ type ResultData = {
   translated: string;
   srt: string;
   tts: string;
+  background?: string;
+  englishVoice?: string;
   originalMedia?: string;
   isVideo?: boolean;
 };
@@ -317,6 +320,16 @@ export default function HomePage() {
               <div className="transition-all duration-500 opacity-100">
                 <AudioPlayer audioUrl={result.tts} onDownload={downloadAudio} />
               </div>
+
+              {result.background && result.englishVoice && (
+                <div className="transition-all duration-500 opacity-100">
+                  <AudioMixer
+                    dubbingTrack={result.tts}
+                    backgroundTrack={result.background}
+                    englishVoiceTrack={result.englishVoice}
+                  />
+                </div>
+              )}
 
               <div className="flex justify-center transition-all duration-500 opacity-100">
                 <Button
