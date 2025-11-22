@@ -7,9 +7,11 @@ import { VideoPlayer } from "@/components/VideoPlayer";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileText, Languages, AudioWaveform, Mic2, UserRound, User } from "lucide-react";
+import { FileText, Languages, AudioWaveform, Mic2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import axios from "axios";
+import boyIcon from "@assets/generated_images/kurdish_boy_with_traditional_clothing.png";
+import girlIcon from "@assets/generated_images/kurdish_girl_with_traditional_clothing.png";
 
 // Voice configuration
 const VOICES = {
@@ -209,32 +211,30 @@ export default function HomePage() {
                   </div>
 
                   {/* Gender Selector */}
-                  <div className="mb-8 flex gap-3">
+                  <div className="mb-8 flex gap-4">
                     <Button
-                      size="icon"
                       variant={selectedGender === "male" ? "default" : "outline"}
                       onClick={() => {
                         setSelectedGender("male");
                         setSelectedVoiceId("sorani_male_1");
                       }}
                       data-testid="button-gender-male"
-                      className="w-12 h-12 transition-all duration-200"
+                      className="w-16 h-16 p-0 transition-all duration-200 overflow-hidden"
                       title="Male Voice"
                     >
-                      <UserRound className="w-5 h-5" />
+                      <img src={boyIcon} alt="Male Voice" className="w-full h-full object-cover" />
                     </Button>
                     <Button
-                      size="icon"
                       variant={selectedGender === "female" ? "default" : "outline"}
                       onClick={() => {
                         setSelectedGender("female");
                         setSelectedVoiceId("sorani_female_1");
                       }}
                       data-testid="button-gender-female"
-                      className="w-12 h-12 transition-all duration-200"
+                      className="w-16 h-16 p-0 transition-all duration-200 overflow-hidden"
                       title="Female Voice"
                     >
-                      <User className="w-5 h-5" />
+                      <img src={girlIcon} alt="Female Voice" className="w-full h-full object-cover" />
                     </Button>
                   </div>
 
