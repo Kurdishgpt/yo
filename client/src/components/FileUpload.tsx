@@ -46,9 +46,9 @@ export function FileUpload({ onFileSelect, disabled }: FileUploadProps) {
 
   return (
     <div
-      className={`min-h-64 border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-4 p-8 transition-colors hover-elevate ${
-        dragActive ? "border-primary bg-accent/50" : "border-border"
-      } ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+      className={`min-h-72 border-2 border-dashed rounded-xl flex flex-col items-center justify-center gap-6 p-12 transition-all duration-300 shadow-lg hover:shadow-xl ${
+        dragActive ? "border-primary bg-primary/5 scale-[1.02]" : "border-border bg-card"
+      } ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:border-primary/50"}`}
       onDragEnter={handleDrag}
       onDragLeave={handleDrag}
       onDragOver={handleDrag}
@@ -56,32 +56,43 @@ export function FileUpload({ onFileSelect, disabled }: FileUploadProps) {
       onClick={disabled ? undefined : handleClick}
       data-testid="upload-zone"
     >
-      <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-        <CloudUpload className="w-8 h-8 text-primary" />
+      <div className={`w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 ${
+        dragActive ? "bg-primary/20 scale-110" : "bg-primary/10"
+      }`}>
+        <CloudUpload className={`w-10 h-10 text-primary transition-transform duration-300 ${
+          dragActive ? "scale-110" : ""
+        }`} />
       </div>
       <div className="text-center">
-        <p className="text-lg font-medium mb-1">
-          {disabled ? "Processing..." : "Drag video or audio file here"}
+        <p className="text-xl font-semibold mb-2">
+          {disabled ? "Processing..." : "Drop your file here"}
         </p>
-        <p className="text-sm text-muted-foreground mb-4">
-          or click to browse
+        <p className="text-sm text-muted-foreground mb-6">
+          or click to browse from your device
         </p>
         <Button
           variant="outline"
-          size="sm"
+          size="lg"
           disabled={disabled}
           onClick={(e) => {
             e.stopPropagation();
             handleClick();
           }}
           data-testid="button-browse"
+          className="hover:scale-105 transition-transform"
         >
+          <CloudUpload className="w-4 h-4 mr-2" />
           Browse Files
         </Button>
       </div>
-      <p className="text-xs text-muted-foreground">
-        Supported formats: MP4, MOV, AVI, MP3, WAV, M4A
-      </p>
+      <div className="flex flex-wrap items-center justify-center gap-2 text-xs text-muted-foreground">
+        <span className="px-3 py-1 rounded-full bg-muted">MP4</span>
+        <span className="px-3 py-1 rounded-full bg-muted">MOV</span>
+        <span className="px-3 py-1 rounded-full bg-muted">AVI</span>
+        <span className="px-3 py-1 rounded-full bg-muted">MP3</span>
+        <span className="px-3 py-1 rounded-full bg-muted">WAV</span>
+        <span className="px-3 py-1 rounded-full bg-muted">M4A</span>
+      </div>
       <input
         ref={inputRef}
         type="file"

@@ -6,7 +6,7 @@ import { AudioPlayer } from "@/components/AudioPlayer";
 import { VideoPlayer } from "@/components/VideoPlayer";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
-import { FileText, Languages, AudioWaveform, Mic2 } from "lucide-react";
+import { FileText, Languages, AudioWaveform, Mic2, UserRound, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import axios from "axios";
 
@@ -153,55 +153,97 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-50">
-        <div className="max-w-6xl mx-auto px-6 py-4">
+      <header className="border-b sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-50 shadow-sm">
+        <div className="max-w-6xl mx-auto px-6 py-5">
           <Logo />
         </div>
       </header>
       
-      <div className="py-16 md:py-24">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl md:text-5xl font-bold mb-4">
-              Kurdish Dubbing & Translation
-            </h2>
-            <p className="text-lg text-muted-foreground mb-2">
-              Upload your video or audio, get Kurdish dubbing with synchronized subtitles
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Powered by Whisper AI, Google Translate & Kurdish TTS
-            </p>
-          </div>
-
-          {!isProcessing && !result && (
-            <div className="max-w-4xl mx-auto space-y-6">
-              <div className="bg-card rounded-lg border p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <Mic2 className="w-5 h-5 text-primary" />
-                  <h3 className="text-lg font-semibold">Select Kurdish Voice</h3>
-                </div>
-                <div className="flex gap-4">
-                  <Button
-                    variant={selectedVoice === "sorani_85" ? "default" : "outline"}
-                    onClick={() => setSelectedVoice("sorani_85")}
-                    data-testid="button-voice-male"
-                    className="flex-1"
-                  >
-                    Male Voice
-                  </Button>
-                  <Button
-                    variant={selectedVoice === "sorani_214" ? "default" : "outline"}
-                    onClick={() => setSelectedVoice("sorani_214")}
-                    data-testid="button-voice-female"
-                    className="flex-1"
-                  >
-                    Female Voice
-                  </Button>
-                </div>
-              </div>
-              <FileUpload onFileSelect={handleFileSelect} />
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-accent/5 pointer-events-none" />
+        <div className="relative py-16 md:py-24">
+          <div className="max-w-6xl mx-auto px-6">
+            <div className="text-center mb-16">
+              <h2 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                Kurdish Dubbing & Translation
+              </h2>
+              <p className="text-lg md:text-xl text-muted-foreground mb-3 max-w-2xl mx-auto">
+                Upload your video or audio, get Kurdish dubbing with synchronized subtitles
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Powered by Whisper AI, Google Translate & Kurdish TTS
+              </p>
             </div>
-          )}
+
+            {!isProcessing && !result && (
+              <div className="max-w-4xl mx-auto space-y-8">
+                <div className="bg-card rounded-xl border shadow-lg hover:shadow-xl transition-all duration-300 p-8">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <Mic2 className="w-5 h-5 text-primary" />
+                    </div>
+                    <h3 className="text-xl font-semibold">Select Kurdish Voice</h3>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Button
+                      variant={selectedVoice === "sorani_85" ? "default" : "outline"}
+                      onClick={() => setSelectedVoice("sorani_85")}
+                      data-testid="button-voice-male"
+                      size="lg"
+                      className="h-auto py-6 px-6 justify-start gap-4 text-left transition-all duration-200 hover:scale-[1.02]"
+                    >
+                      <div 
+                        className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                          selectedVoice === "sorani_85" ? "bg-primary-foreground/20" : "bg-muted"
+                        }`}
+                        data-testid="icon-voice-male"
+                      >
+                        <UserRound className="w-6 h-6" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-semibold text-base" data-testid="text-voice-male-title">Male Voice</div>
+                        <div 
+                          className={`text-sm ${
+                            selectedVoice === "sorani_85" ? "text-primary-foreground/70" : "text-muted-foreground"
+                          }`}
+                          data-testid="text-voice-male-language"
+                        >
+                          Sorani Kurdish
+                        </div>
+                      </div>
+                    </Button>
+                    <Button
+                      variant={selectedVoice === "sorani_214" ? "default" : "outline"}
+                      onClick={() => setSelectedVoice("sorani_214")}
+                      data-testid="button-voice-female"
+                      size="lg"
+                      className="h-auto py-6 px-6 justify-start gap-4 text-left transition-all duration-200 hover:scale-[1.02]"
+                    >
+                      <div 
+                        className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                          selectedVoice === "sorani_214" ? "bg-primary-foreground/20" : "bg-muted"
+                        }`}
+                        data-testid="icon-voice-female"
+                      >
+                        <User className="w-6 h-6" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="font-semibold text-base" data-testid="text-voice-female-title">Female Voice</div>
+                        <div 
+                          className={`text-sm ${
+                            selectedVoice === "sorani_214" ? "text-primary-foreground/70" : "text-muted-foreground"
+                          }`}
+                          data-testid="text-voice-female-language"
+                        >
+                          Sorani Kurdish
+                        </div>
+                      </div>
+                    </Button>
+                  </div>
+                </div>
+                <FileUpload onFileSelect={handleFileSelect} />
+              </div>
+            )}
 
           {isProcessing && (
             <div className="max-w-4xl mx-auto">
@@ -210,41 +252,52 @@ export default function HomePage() {
           )}
 
           {result && !isProcessing && (
-            <div className="space-y-8">
+            <div className="space-y-8 transition-all duration-700 opacity-100">
               {result.originalMedia && (
-                <VideoPlayer videoUrl={result.originalMedia} />
+                <div className="transition-all duration-500 opacity-100">
+                  <VideoPlayer videoUrl={result.originalMedia} />
+                </div>
               )}
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <ResultCard
-                  title="Original Transcription"
-                  content={result.transcription}
-                  icon={<FileText className="w-5 h-5" />}
-                  language="EN"
-                />
-                <ResultCard
-                  title="Kurdish Translation"
-                  content={result.translated}
-                  icon={<Languages className="w-5 h-5" />}
-                  language="CKB"
-                />
-                <ResultCard
-                  title="Generated Subtitles"
-                  content={result.srt}
-                  icon={<AudioWaveform className="w-5 h-5" />}
-                  isMonospace
-                  onDownload={() => downloadFile(result.srt, "subtitles.srt")}
-                />
+                <div className="transition-all duration-500 opacity-100">
+                  <ResultCard
+                    title="Original Transcription"
+                    content={result.transcription}
+                    icon={<FileText className="w-5 h-5" />}
+                    language="EN"
+                  />
+                </div>
+                <div className="transition-all duration-500 opacity-100">
+                  <ResultCard
+                    title="Kurdish Translation"
+                    content={result.translated}
+                    icon={<Languages className="w-5 h-5" />}
+                    language="CKB"
+                  />
+                </div>
+                <div className="transition-all duration-500 opacity-100">
+                  <ResultCard
+                    title="Generated Subtitles"
+                    content={result.srt}
+                    icon={<AudioWaveform className="w-5 h-5" />}
+                    isMonospace
+                    onDownload={() => downloadFile(result.srt, "subtitles.srt")}
+                  />
+                </div>
               </div>
 
-              <AudioPlayer audioUrl={result.tts} onDownload={downloadAudio} />
+              <div className="transition-all duration-500 opacity-100">
+                <AudioPlayer audioUrl={result.tts} onDownload={downloadAudio} />
+              </div>
 
-              <div className="flex justify-center">
+              <div className="flex justify-center transition-all duration-500 opacity-100">
                 <Button
                   size="lg"
                   variant="outline"
                   onClick={handleStartNew}
                   data-testid="button-start-new"
+                  className="hover:scale-105 transition-transform"
                 >
                   Start New Translation
                 </Button>
@@ -252,11 +305,25 @@ export default function HomePage() {
             </div>
           )}
         </div>
+        </div>
       </div>
 
-      <footer className="border-t py-8">
-        <div className="max-w-6xl mx-auto px-6 text-center text-sm text-muted-foreground">
-          <p>Kurdish Dubbing Application &copy; 2025 • Powered by Free AI Tools</p>
+      <footer className="border-t bg-muted/30 py-12 mt-16">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="text-center">
+            <div className="flex items-center justify-center gap-2 mb-3">
+              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Languages className="w-4 h-4 text-primary" />
+              </div>
+              <span className="font-semibold text-lg">Kurdish Dubbing</span>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              Professional Kurdish translation and dubbing powered by AI
+            </p>
+            <p className="text-xs text-muted-foreground">
+              &copy; 2025 Kurdish Dubbing Application • Powered by Whisper AI, Google Translate & Kurdish TTS
+            </p>
+          </div>
         </div>
       </footer>
     </div>
