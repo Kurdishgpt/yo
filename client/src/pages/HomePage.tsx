@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { FileText, Languages, AudioWaveform, Mic2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import axios from "axios";
+import { getApiEndpoint } from "@/lib/api";
 import boyIcon from "@assets/generated_images/beautiful_kurdish_boy_with_traditional_clothing.png";
 import girlIcon from "@assets/generated_images/kurdish_girl_with_traditional_clothing.png";
 
@@ -77,7 +78,7 @@ export default function HomePage() {
       updateStep("1", "processing");
       setProgress(10);
 
-      const response = await axios.post<ResultData>("/api/upload", formData, {
+      const response = await axios.post<ResultData>(getApiEndpoint("/api/upload"), formData, {
         headers: { "Content-Type": "multipart/form-data" },
         onUploadProgress: (progressEvent: any) => {
           const uploadProgress = progressEvent.total
