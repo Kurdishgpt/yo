@@ -9,8 +9,8 @@ node_modules
 uploads
 outputs
 
-# Build artifacts (not needed for serverless deployment)
-dist
+# Build artifacts are needed for static frontend serving
+# dist folder contains the built frontend
 
 # Development only
 .replit
